@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "web"
+version = "0.1.0"
+description = ""
+authors = ["maxim-f1 <maxconal228@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.8"
+pydantic-settings = "^2.7.1"
+sqlalchemy = "^2.0.38"
+uvicorn = "^0.34.0"
+alembic = "^1.14.1"
+asyncpg = "^0.30.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
