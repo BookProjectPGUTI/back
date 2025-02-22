@@ -17,4 +17,4 @@ jobs:
       - run: echo "${{ secrets.key }}" > "$HOME/.ssh/key"
       - run: chmod 600 "$HOME/.ssh/key"
       # Deploy
-      - run: ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.server_user }}@${{ secrets.server.ip }} "cd ~/book_project/back && git pull && docker compose down && docker compose up -d --build --remove-orphans"
+      - run: ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.server_user }}@${{ secrets.server_ip }} "cd ~/book_project/back && git pull && docker compose down && docker compose up -d --build --remove-orphans"
