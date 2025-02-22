@@ -13,6 +13,9 @@ sqlalchemy = "^2.0.38"
 uvicorn = "^0.34.0"
 alembic = "^1.14.1"
 asyncpg = "^0.30.0"
+alembic-utils = "^0.8.6"
+pydantic = {extras = ["email"], version = "^2.10.6"}
+fastapi-mail = "^1.4.2"
 
 
 [build-system]

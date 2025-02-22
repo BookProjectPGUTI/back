@@ -1,10 +1,12 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic_utils.replaceable_entity import register_entities
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
+from alembic_utils.pg_extension import PGExtension
 
 # Определяем все модели
 from src.database.postgres.models import *
@@ -21,6 +23,17 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = ABCModel.metadata
+
+pgcrypto = PGExtension(
+    schema='public',
+    signature='pgcrypto'
+)
+
+register_entities(
+    [
+        pgcrypto,
+    ]
+)
 
 
 def run_migrations_offline() -> None:

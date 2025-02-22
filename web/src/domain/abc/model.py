@@ -1,5 +1,4 @@
 import datetime
-import abc
 from typing import Any, Dict
 
 from sqlalchemy import DateTime, func
@@ -21,16 +20,13 @@ class ABCModel(AsyncAttrs, DeclarativeBase):
         }
 
 
-class ABCAdminModel(ABCModel):
+class ABCTimestampModel(ABCModel):
     __abstract__ = True
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=False), default=func.now(), onupdate=datetime.datetime.now, nullable=False
+        DateTime(timezone=False), default=func.now(), server_default=func.now(),
+        onupdate=datetime.datetime.now, nullable=False
     )
-
-    @abc.abstractmethod
-    def __str__(self) -> str:
-        ...
