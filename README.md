@@ -8,7 +8,9 @@
 [![Redis](https://img.shields.io/badge/-Redis-464646?style=flat-square&logo=Redis)](https://redis.io/)
 [![Poetry](https://img.shields.io/badge/-Poetry-464646?style=flat-square&logo=Poetry)](https://python-poetry.org/)
 
-# Book Project PGUTI
+![Deploy](https://github.com/BookProjectPGUTI/back/actions/workflows/deploy.yml/badge.svg)
+
+# Book Project
 
 ## Запуск проекта  
   
