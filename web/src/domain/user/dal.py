@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from uuid import UUID
 
-from sqlalchemy import text, select, func
+from sqlalchemy import text, select, func, update
 
 from src.domain.abc.dal import ABCDAL
 from src.domain.user.model import User
@@ -60,3 +60,38 @@ RETURNING {self.model.id.key};
 
         result = (await self.session.execute(stmt)).one_or_none()
         return result is not None
+
+    async def check_user_confirmed(self, user_id: UUID) -> bool:
+        stmt = select(
+            self.model.id
+        ).where(
+            self.model.id == user_id,
+            self.model.is_confirmed.is_(True)
+        ).limit(1)
+
+        result = (await self.session.execute(stmt)).one_or_none()
+        return result is not None
+
+    async def check_user_enabled(self, user_id: UUID) -> bool:
+        stmt = select(
+            self.model.id
+        ).where(
+            self.model.id == user_id,
+            self.model.is_enabled.is_(True)
+        ).limit(1)
+
+        result = (await self.session.execute(stmt)).one_or_none()
+        return result is not None
+
+    async def confirm_user(self, user_id: UUID):
+        stmt = update(
+            self.model
+        ).values(
+            **{
+                self.model.is_confirmed.key: True
+            }
+        ).where(
+            self.model.id == user_id
+        )
+
+        await self.session.execute(stmt)
