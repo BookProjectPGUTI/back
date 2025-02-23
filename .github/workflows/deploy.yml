@@ -1,4 +1,4 @@
-name: Deploy
+name: Develop Environment Deploy
 
 on:
   push:
@@ -9,13 +9,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-      # Setup key
-      - run: set -eu
-      - run: mkdir "$HOME/.ssh"
-      - run: echo "${{ secrets.key }}" > "$HOME/.ssh/key"
-      - run: chmod 600 "$HOME/.ssh/key"
-      # Deploy
-      - run: ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.server_user }}@${{ secrets.server_ip }} 
-             "cd ~/book_project/back && git pull && docker compose down && docker compose up -d --build --remove-orphans"
+      - name: Checkout code changes
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          set -eu
+          mkdir "$HOME/.ssh"
+          echo "${{ secrets.key }}" > "$HOME/.ssh/key"
+          chmod 600 "$HOME/.ssh/key"
+
+      - name: Pull changes and restart project on server
+        run: |
+          ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.server_user }}@${{ secrets.server_ip }} \
+          "cd ~/book_project/back && git pull && docker compose down && docker compose up -d --build --remove-orphans"

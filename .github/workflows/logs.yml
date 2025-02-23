@@ -1,0 +1,32 @@
+name: Get logs
+run-name: Getting logs from ${{ inputs.container }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      container:
+        description: 'Select container'
+        required: true
+        default: 'web'
+        type: choice
+        options:
+          - web
+          - postgres
+          - nginx
+
+jobs:
+  view-logs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH key
+        run: |
+          set -eu
+          mkdir "$HOME/.ssh"
+          echo "${{ secrets.key }}" > "$HOME/.ssh/key"
+          chmod 600 "$HOME/.ssh/key"
+
+      - name: Getting logs from server
+        run: |
+          ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.server_user }}@${{ secrets.server_ip }} \
+          "cd ~/book_project/back && docker logs ${{ inputs.container }}"
