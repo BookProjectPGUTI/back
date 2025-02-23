@@ -3,7 +3,7 @@ run-name: Started Tests by @${{ github.actor }}
 
 on:
   pull_request:
-    branches: ["main", "development"]
+    branches: ["main", "develop"]
 
 jobs:
   test_suite:
