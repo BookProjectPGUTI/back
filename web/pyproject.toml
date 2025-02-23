@@ -18,6 +18,13 @@ pydantic = {extras = ["email"], version = "^2.10.6"}
 fastapi-mail = "^1.4.2"
 
 
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.25.3"
+pytest-dotenv = "^0.5.2"
+pytest-mock = "^3.14.0"
+pytest-env = "^1.1.5"
+faker = "^36.1.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
