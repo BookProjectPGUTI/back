@@ -22,4 +22,6 @@ jobs:
       - name: Pull changes and restart project on server
         run: |
           ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.server_user }}@${{ secrets.server_ip }} \
-          "cd ~/book_project/back && git pull && docker compose down && docker compose up -d --build --remove-orphans"
+          "cd ~/book_project/back && 
+          git pull && docker compose down web && 
+          docker compose up -d --build --remove-orphans"
