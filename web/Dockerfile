@@ -16,6 +16,6 @@ COPY web/poetry.lock web/pyproject.toml /web/
 
 RUN pip install "poetry==$POETRY_VERSION" && \
     poetry config virtualenvs.create false && \
-    poetry install --no-dev --no-interaction --no-ansi
+    poetry install --only main --no-interaction --no-ansi
 
 COPY ./web/ /web/

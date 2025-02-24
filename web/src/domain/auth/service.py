@@ -1,26 +1,139 @@
-from jwt import PyJWT, InvalidTokenError
+from typing import Annotated
+
+from fastapi import Response, HTTPException, Security
+from fastapi.security import APIKeyCookie, HTTPBearer, HTTPAuthorizationCredentials
 
 from src.config.auth import AUTH_CONFIG
-from src.domain.auth.exception import INVALID_CREDENTIALS
+from src.database.postgres.depends import get_session_depends
+from src.domain.auth.dto import AccessTokenDTO, RefreshTokenDTO
+from src.domain.auth.exception import (
+    ACCESS_NOT_FOUND, ACCESS_EXPIRES, REFRESH_NOT_FOUND, REFRESH_EXPIRES
+)
+from src.domain.token.dal import TokenDAL
+from src.domain.token.model import Token
+from src.domain.token.service import create_tokens, JWT
+from src.utils.time_utils import get_now
 
 
-class JWT:
-    jwt = PyJWT(
-        {
-            'verify_signature': True, 'verify_aud': False, 'verify_iat': False, 'verify_exp': True, 'verify_nbf': False,
-            'verify_iss': False, 'verify_sub': True, 'verify_jti': True, 'verify_at_hash': False, 'require_aud': False,
-            'require_iat': False, 'require_exp': True, 'require_nbf': False, 'require_iss': False, 'require_sub': True,
-            'require_jti': True, 'require_at_hash': False, 'leeway': 99999,
-        }
+refresh_bearer_depends = Annotated[
+    HTTPAuthorizationCredentials | None,
+    Security(
+        HTTPBearer(
+            scheme_name='Bearer', description='Set refresh token to header (without Bearer in start).',
+            auto_error=False
+        )
     )
+]
 
-    @classmethod
-    def encode(cls, claims: dict[str, str | int]) -> str:
-        return cls.jwt.encode(claims, AUTH_CONFIG.secret, algorithm=AUTH_CONFIG.algorithm)
+refresh_cookies_depends = Annotated[
+    str | None,
+    Security(
+        APIKeyCookie(
+            name=AUTH_CONFIG.refresh_key, description='Set refresh token to cookies.', auto_error=False,
+        )
+    )
+]
 
-    @classmethod
-    def decode(cls, token: str) -> dict[str, str | int]:
+access_bearer_depends = Annotated[
+    HTTPAuthorizationCredentials | None,
+    Security(
+        HTTPBearer(
+            scheme_name='Bearer', description='Set refresh token to header (without Bearer in start).',
+            auto_error=False
+        )
+    )
+]
+
+access_cookies_depends = Annotated[
+    str | None,
+    Security(
+        APIKeyCookie(
+            name=AUTH_CONFIG.access_key, description='Set refresh token to cookies.', auto_error=False,
+        )
+    )
+]
+
+
+class UserFilter:
+    def __init__(self, is_make_refresh: bool = False):
+        self.is_make_refresh = is_make_refresh
+
+    async def __call__(
+            self,
+            response: Response,
+            session: get_session_depends,
+            access_bearer_token: access_bearer_depends,
+            access_cookies_token: access_cookies_depends,
+            refresh_bearer_token: refresh_bearer_depends,
+            refresh_cookies_token: refresh_cookies_depends,
+    ) -> AccessTokenDTO:
+        self.session = session
+        self.access_bearer_token = access_bearer_token
+        self.access_cookies_token = access_cookies_token
+        self.refresh_bearer_token = refresh_bearer_token
+        self.refresh_cookies_token = refresh_cookies_token
+
         try:
-            return cls.jwt.decode(token, AUTH_CONFIG.secret, algorithms=[AUTH_CONFIG.algorithm])
-        except InvalidTokenError:
-            raise INVALID_CREDENTIALS
+            access_payload = await self.check_access()
+            if self.is_make_refresh is True:
+                token_db = await self.check_refresh()
+                await create_tokens(session, response, token_db.user_id)
+            return access_payload
+        except HTTPException as e:
+            if e in (ACCESS_EXPIRES, ACCESS_NOT_FOUND):
+                token_db = await self.check_refresh()
+                access_payload = await create_tokens(session, response, token_db.user_id)
+                return access_payload
+            else:
+                raise e
+
+    async def check_access(self) -> AccessTokenDTO:
+        if self.access_bearer_token is not None:
+            token = self.access_bearer_token.credentials
+        elif self.access_cookies_token is not None:
+            token = self.access_cookies_token
+        else:
+            raise ACCESS_NOT_FOUND
+
+        payload = AccessTokenDTO.model_validate(JWT.decode(token))
+
+        if payload.exp < int(get_now().timestamp()):
+            raise ACCESS_EXPIRES
+
+        if payload.exp > int(get_now(hours=1).timestamp()):
+            self.is_make_refresh = True
+
+        token_db = await TokenDAL(self.session).get_by_user_id(payload.sub)
+        if token_db is None:
+            raise ACCESS_NOT_FOUND
+
+        if token_db.access_id != payload.jti:
+            raise ACCESS_EXPIRES
+
+        return payload
+
+    async def check_refresh(
+            self
+    ) -> Token:
+        if self.refresh_bearer_token is not None:
+            token = self.refresh_bearer_token.credentials
+        elif self.refresh_cookies_token is not None:
+            token = self.refresh_cookies_token
+        else:
+            raise REFRESH_NOT_FOUND
+
+        payload = RefreshTokenDTO.model_validate(JWT.decode(token))
+        if payload.exp < int(get_now().timestamp()):
+            raise REFRESH_EXPIRES
+
+        if payload.exp > int(get_now(days=2).timestamp()):
+            self.is_make_refresh = True
+
+        token_db = await TokenDAL(self.session).get_by_user_id(payload.sub)
+        if token_db is None:
+            raise REFRESH_NOT_FOUND
+
+        if token_db.refresh_id != payload.jti:
+            raise REFRESH_EXPIRES
+
+        return token_db
