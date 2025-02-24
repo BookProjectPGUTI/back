@@ -16,6 +16,7 @@ asyncpg = "^0.30.0"
 alembic-utils = "^0.8.6"
 pydantic = {extras = ["email"], version = "^2.10.6"}
 fastapi-mail = "^1.4.2"
+pyjwt = "^2.10.1"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -95,3 +95,13 @@ RETURNING {self.model.id.key};
         )
 
         await self.session.execute(stmt)
+
+    async def get_by_username(self, username: str) -> User | None:
+        stmt = select(
+            self.model
+        ).where(
+            self.model.username == username
+        ).limit(1)
+
+        result = (await self.session.execute(stmt)).scalar_one_or_none()
+        return result
