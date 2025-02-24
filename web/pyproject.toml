@@ -3,7 +3,7 @@ name = "web"
 version = "0.1.0"
 description = ""
 authors = ["maxim-f1 <maxconal228@gmail.com>"]
-readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
