@@ -12,7 +12,7 @@ from src.domain.user.exception import (
     EMAIL_ALREADY_EXISTS, USERNAME_ALREADY_EXISTS, USER_NOT_FOUND, USER_ALREADY_CONFIRMED, USER_DISABLED,
     USER_UNCONFIRMED
 )
-from src.domain.auth.exception import INVALID_CREDENTIALS
+from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
 from src.domain.user.service import sign_up, email_accept, validate_credentials
 from src.utils.router_utils import build_exception_responses, build_description
 
@@ -98,7 +98,7 @@ async def sign_in_endpoint(
         {97}
     ),
     responses=build_exception_responses(
-        INVALID_CREDENTIALS, USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
     )
 )
 async def refresh_endpoint(
