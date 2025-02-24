@@ -24,3 +24,8 @@ USER_DISABLED = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,
     detail='Пользователь заблокирован.'
 )
+
+USER_UNCONFIRMED = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail='Почта пользователя не подтверждена.'
+)

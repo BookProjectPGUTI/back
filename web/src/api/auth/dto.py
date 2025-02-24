@@ -1,4 +1,5 @@
 import re
+from uuid import UUID
 
 from pydantic import EmailStr, Field
 
@@ -19,3 +20,14 @@ class SignUpDTO(ABCDTO):
 
 class SignUpResponse(ABCResponse):
     detail: str = Field('Регистрация прошла успешно! Проверьте email для подтверждения.')
+
+
+class SignInDTO(ABCDTO):
+    username: str = Field(..., max_length=20, description='Псевдоним пользователя')
+    password: str = Field(..., min_length=8, max_length=60, description='Пароль пользователя')
+
+
+class SingInResponse(ABCResponse):
+    id: UUID = Field(..., description='ID пользователя')
+    username: str = Field(..., max_length=20, description='Псевдоним пользователя')
+    email: EmailStr = Field(..., max_length=60, description='Почта пользователя')

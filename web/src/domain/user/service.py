@@ -4,13 +4,15 @@ from fastapi_mail import MessageSchema, FastMail, MessageType
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import HTMLResponse
 
-from src.api.auth.dto import SignUpDTO, SignUpResponse
+from src.api.auth.dto import SignUpDTO, SignUpResponse, SignInDTO
 from src.config.mail import MAIL_CONFIG
 from src.config.web import WEB_CONFIG
 from src.domain.mail.sign_up import build_sign_up_mail
 from src.domain.user.dal import UserDAL
 from src.domain.user.exception import EMAIL_ALREADY_EXISTS, USERNAME_ALREADY_EXISTS, USER_NOT_FOUND, \
-    USER_ALREADY_CONFIRMED, USER_DISABLED
+    USER_ALREADY_CONFIRMED, USER_DISABLED, USER_UNCONFIRMED
+from src.domain.auth.exception import INVALID_CREDENTIALS
+from src.domain.user.model import User
 
 
 async def sign_up(session: AsyncSession, body: SignUpDTO) -> SignUpResponse:
@@ -85,3 +87,25 @@ async def email_accept(session: AsyncSession, user_id: UUID) -> HTMLResponse:
 </html>
         """
     )
+
+
+async def validate_credentials(session: AsyncSession, body: SignInDTO) -> User:
+    user_dal = UserDAL(session)
+
+    credentials_valid = await user_dal.check_credentials(body.username, body.password)
+    if credentials_valid is False:
+        raise INVALID_CREDENTIALS
+
+    user = await user_dal.get_by_username(body.username)
+    if user is None:
+        raise USER_NOT_FOUND
+
+    if user.is_confirmed is False:
+        raise USER_UNCONFIRMED
+
+    if user.is_enabled is False:
+        raise USER_DISABLED
+
+    return user
+
+
