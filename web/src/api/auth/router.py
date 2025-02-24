@@ -1,10 +1,12 @@
 from uuid import UUID
 
-from fastapi import APIRouter, status, Path, Response
+from fastapi import APIRouter, status, Path, Response, Depends
 from starlette.responses import HTMLResponse
 
 from src.api.auth.dto import SignUpDTO, SignUpResponse, SignInDTO, SingInResponse
 from src.database.postgres.depends import get_session_depends
+from src.domain.auth.dto import AccessTokenDTO
+from src.domain.auth.service import UserFilter
 from src.domain.token.service import create_tokens
 from src.domain.user.exception import (
     EMAIL_ALREADY_EXISTS, USERNAME_ALREADY_EXISTS, USER_NOT_FOUND, USER_ALREADY_CONFIRMED, USER_DISABLED,
@@ -85,3 +87,21 @@ async def sign_in_endpoint(
         username=user.username,
         email=user.email,
     )
+
+
+@auth_router_v1.post(
+    path='/refresh',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Обновление токенов',
+    description=build_description(
+        'Обновление пары refresh и access токенов.',
+        {97}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED
+    )
+)
+async def refresh_endpoint(
+        user: AccessTokenDTO = Depends(UserFilter(is_make_refresh=True))
+):
+    return
