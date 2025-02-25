@@ -4,7 +4,7 @@ from fastapi import FastAPI, APIRouter
 
 from src.api.auth.router import auth_router_v1
 from src.config.web import WEB_CONFIG
-from src.config.mail import MAIL_CONFIG
+from src.config.mail import MAIL_CONFIG  # noqa
 from src.utils.router_utils import include_routers
 
 
@@ -32,7 +32,9 @@ async def lifespan(app_: FastAPI):
 
 app = FastAPI(
     title='Book Project API',
+    summary='Сервис по обмену книгами между пользователями.',
+    version='0.2',
     debug=WEB_CONFIG.debug,
     lifespan=lifespan,
-    root_path='/api'
+    root_path='/api',
 )
