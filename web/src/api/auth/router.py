@@ -72,7 +72,7 @@ async def email_accept_endpoint(
     ),
     response_model=SingInResponse,
     responses=build_exception_responses(
-        INVALID_CREDENTIALS, USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED
+        INVALID_CREDENTIALS, USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED,
     )
 )
 async def sign_in_endpoint(
@@ -98,7 +98,7 @@ async def sign_in_endpoint(
         {97}
     ),
     responses=build_exception_responses(
-        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
     )
 )
 async def refresh_endpoint(

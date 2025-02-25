@@ -12,6 +12,8 @@ from src.domain.auth.exception import (
 from src.domain.token.dal import TokenDAL
 from src.domain.token.model import Token
 from src.domain.token.service import create_tokens, JWT
+from src.domain.user.dal import UserDAL
+from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED
 from src.utils.time_utils import get_now
 
 
@@ -110,6 +112,16 @@ class UserFilter:
         if token_db.access_id != payload.jti:
             raise ACCESS_EXPIRES
 
+        user = await UserDAL(self.session).get_by_id(payload.sub)
+        if user is None:
+            raise USER_NOT_FOUND
+
+        if user.is_enabled is False:
+            raise USER_DISABLED
+
+        if user.is_confirmed is False:
+            raise USER_UNCONFIRMED
+
         return payload
 
     async def check_refresh(
@@ -135,5 +147,15 @@ class UserFilter:
 
         if token_db.refresh_id != payload.jti:
             raise REFRESH_EXPIRES
+
+        user = await UserDAL(self.session).get_by_id(payload.sub)
+        if user is None:
+            raise USER_NOT_FOUND
+
+        if user.is_enabled is False:
+            raise USER_DISABLED
+
+        if user.is_confirmed is False:
+            raise USER_UNCONFIRMED
 
         return token_db

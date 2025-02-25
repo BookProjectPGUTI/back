@@ -105,3 +105,13 @@ RETURNING {self.model.id.key};
 
         result = (await self.session.execute(stmt)).scalar_one_or_none()
         return result
+
+    async def get_by_id(self, user_id: UUID) -> User:
+
+        query = select(
+            self.model
+        ).where(
+            self.model.id == user_id,
+        )
+
+        return (await self.session.execute(query)).scalar_one_or_none()
