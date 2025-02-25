@@ -1,0 +1,59 @@
+name: Run Tests
+run-name: Started Tests by @${{ github.actor }}
+
+on:
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  test_suite:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: web_database
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Run image
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: "1.8.3"
+
+      - name: Setup .env
+        run: cp .env.example .env
+
+      - name: Setup a local virtual environment
+        working-directory: ./web
+        run: poetry config virtualenvs.create false --local
+
+      - uses: actions/cache@v3
+        name: Define a cache for the virtual environment based on the dependencies lock file
+        with:
+          path: ./.venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+
+      - name: Install the project dependencies
+        working-directory: ./web
+        run: poetry install --no-root --no-interaction --no-ansi
+
+      - name: Run the automated tests
+        working-directory: ./web
+        run: poetry run pytest -vv -c ./pytest.ini
+        env:
+          POSTGRES_HOST: postgres

@@ -9,12 +9,22 @@ services:
     env_file:
       - .env
     command:
-      uvicorn src.api.main:app --host 0.0.0.0 --port ${WEB_PORT}
+      sh -c "sh /web/migrations.sh && uvicorn src.api.main:app --host 0.0.0.0 --port ${WEB_PORT} --reload"
     volumes:
-      - ./web/migrations/:/web/migrations/
+      - ./web:/web
     depends_on:
       postgres:
         condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./web
+          target: /web
+          ignore:
+            - ./web/poetry.lock
+            - ./web/pyproject.toml
+        - action: rebuild
+          path: ./web/pyproject.toml
     restart: always
 
   postgres:
@@ -35,6 +45,19 @@ services:
       retries: 5
       start_period: 80s
     restart: always
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./docker/nginx/:/etc/nginx/conf.d/:ro
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+    depends_on:
+      - web
 
 volumes:
   postgres:

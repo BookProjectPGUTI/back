@@ -32,3 +32,16 @@ def build_exception_responses(*exceptions: HTTPException) -> Dict:
         }
         for status_code, details in result.items()
     }
+
+
+def build_description(description: str, tasks_ids: set[int]) -> str:
+    links = ''.join([
+        f'<p>'
+        f'<a href="https://bagurgl.atlassian.net/browse/PROJECT-{task_id}">Связанная задача PROJECT-{task_id}</a>'
+        f'</p>'
+        for task_id in tasks_ids
+    ])
+    return f"""
+<b>{description}</b>
+{links}
+"""

@@ -8,7 +8,11 @@
 [![Redis](https://img.shields.io/badge/-Redis-464646?style=flat-square&logo=Redis)](https://redis.io/)
 [![Poetry](https://img.shields.io/badge/-Poetry-464646?style=flat-square&logo=Poetry)](https://python-poetry.org/)
 
-# Book Project PGUTI
+![Deploy](https://github.com/BookProjectPGUTI/back/actions/workflows/deploy.yml/badge.svg)
+
+![Tests](https://github.com/BookProjectPGUTI/back/actions/workflows/tests.yml/badge.svg)
+
+# Book Project
 
 ## Запуск проекта  
   
@@ -23,7 +27,7 @@
 2. Копируем [.migration.env.example](mobile/.migration.env.example)
 
     ```
-    cd mobile
+    cd web
     ```
     ```
     cp .migration.env.example .migration.env
@@ -50,11 +54,11 @@
 1. Запускаем создание миграции
 
     ```
-    cd mobile
+    cd web
     ```
    
     ```
-    alembic revision --a -m "описание изменений в моделях"
+    alembic revision --a -m "table_name changes description"
     ```
 
 
