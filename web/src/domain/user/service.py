@@ -1,15 +1,18 @@
 from uuid import UUID
 
+from fastapi import Response
 from fastapi_mail import MessageSchema, FastMail, MessageType
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import HTMLResponse
 
 from src.api.auth.dto import SignUpDTO, SignUpResponse, SignInDTO
 from src.api.user.dto import UserResponse
+from src.config.auth import AUTH_CONFIG
 from src.config.mail import MAIL_CONFIG
 from src.config.web import WEB_CONFIG
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.mail.sign_up import build_sign_up_mail
+from src.domain.token.dal import TokenDAL
 from src.domain.user.dal import UserDAL
 from src.domain.user.exception import EMAIL_ALREADY_EXISTS, USERNAME_ALREADY_EXISTS, USER_NOT_FOUND, \
     USER_ALREADY_CONFIRMED, USER_DISABLED, USER_UNCONFIRMED
@@ -124,3 +127,10 @@ async def get_users_me(session: AsyncSession, user_jwt: AccessTokenDTO) -> UserR
         email=user.email,
         username=user.username,
     )
+
+
+async def sign_out(response: Response, session: AsyncSession, user_jwt: AccessTokenDTO):
+    await TokenDAL(session).delete(user_jwt.sub)
+    response.delete_cookie(AUTH_CONFIG.refresh_key)
+    response.delete_cookie(AUTH_CONFIG.access_key)
+

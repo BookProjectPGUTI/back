@@ -5,6 +5,7 @@ from starlette.responses import HTMLResponse
 
 from src.api.auth.dto import SignUpDTO, SignUpResponse, SignInDTO, SingInResponse
 from src.database.postgres.depends import get_session_depends
+from src.domain.auth.depends import user_depends
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.auth.service import UserFilter
 from src.domain.token.service import create_tokens
@@ -13,7 +14,7 @@ from src.domain.user.exception import (
     USER_UNCONFIRMED
 )
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
-from src.domain.user.service import sign_up, email_accept, validate_credentials
+from src.domain.user.service import sign_up, email_accept, validate_credentials, sign_out
 from src.utils.router_utils import build_exception_responses, build_description
 
 auth_router_v1 = APIRouter(
@@ -105,3 +106,23 @@ async def refresh_endpoint(
         user: AccessTokenDTO = Depends(UserFilter(is_make_refresh=True))
 ):
     return
+
+
+@auth_router_v1.delete(
+    path='/sign-out',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Выход',
+    description=build_description(
+        'Удаление пары refresh и access токенов.',
+        {98}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+    )
+)
+async def sign_out_endpoint(
+        response: Response,
+        user: user_depends,
+        session: get_session_depends,
+):
+    await sign_out(response, session, user)
