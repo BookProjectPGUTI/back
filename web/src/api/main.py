@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, APIRouter
+from starlette.middleware.cors import CORSMiddleware
 
 from src.api.auth.router import auth_router_v1
 from src.config.web import WEB_CONFIG
@@ -37,4 +38,19 @@ app = FastAPI(
     debug=WEB_CONFIG.debug,
     lifespan=lifespan,
     root_path='/api',
+)
+
+origins = [
+    "http://4300193-op40148.twc1.net",
+    "https://4300193-op40148.twc1.net",
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
