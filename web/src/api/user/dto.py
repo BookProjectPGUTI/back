@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import EmailStr, Field
 
-from src.domain.abc.dto import ABCResponse
+from src.domain.abc.dto import ABCResponse, ABCDTO
 
 
 class UserResponse(ABCResponse):
@@ -17,3 +17,9 @@ class UserResponse(ABCResponse):
         description='Псевдоним пользователя'
     )
     rating: int = Field(0, ge=0, description='Рейтинг пользователя')
+
+
+class UserNameDTO(ABCDTO):
+    first_name: str = Field(..., max_length=20, description='Имя пользователя')
+    last_name: str = Field(..., max_length=50, description='Фамилия пользователя')
+    second_name: str = Field(..., max_length=25, description='Отчество пользователя')
