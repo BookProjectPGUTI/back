@@ -105,14 +105,14 @@ class UserFilter:
         if payload.exp > int(get_now(hours=1).timestamp()):
             self.is_make_refresh = True
 
-        token_db = await TokenDAL(self.session).get_by_user_id(payload.sub)
+        token_db = await TokenDAL(self.session).get_by_filter({Token.user_id.key: payload.sub})
         if token_db is None:
             raise ACCESS_NOT_FOUND
 
         if token_db.access_id != payload.jti:
             raise ACCESS_EXPIRES
 
-        user = await UserDAL(self.session).get_by_id(payload.sub)
+        user = await UserDAL(self.session).get_by_filter(id=payload.sub)
         if user is None:
             raise USER_NOT_FOUND
 
@@ -141,14 +141,14 @@ class UserFilter:
         if payload.exp > int(get_now(days=2).timestamp()):
             self.is_make_refresh = True
 
-        token_db = await TokenDAL(self.session).get_by_user_id(payload.sub)
+        token_db = await TokenDAL(self.session).get_by_filter({Token.user_id.key: payload.sub})
         if token_db is None:
             raise REFRESH_NOT_FOUND
 
         if token_db.refresh_id != payload.jti:
             raise REFRESH_EXPIRES
 
-        user = await UserDAL(self.session).get_by_id(payload.sub)
+        user = await UserDAL(self.session).get_by_filter(id=payload.sub)
         if user is None:
             raise USER_NOT_FOUND
 

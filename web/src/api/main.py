@@ -13,9 +13,11 @@ from src.utils.router_utils import include_routers
 async def lifespan(app_: FastAPI):
     from src.api.default.router import default_router_v1
     from src.api.user.router import users_router_v1
+    from src.api.genre.router import genres_router_v1
     routers_v1 = [
         auth_router_v1,
         users_router_v1,
+        genres_router_v1,
     ]
 
     root_router_v1 = include_routers(APIRouter(prefix='/v1'), routers_v1)
@@ -48,7 +50,7 @@ origins = [
 ]
 
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # noqa
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],

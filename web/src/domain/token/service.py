@@ -64,7 +64,7 @@ async def create_tokens(
         }
     ]
 
-    token = await TokenDAL(session).get_by_user_id(user_id)
+    token = await TokenDAL(session).get_by_filter({Token.user_id.key: user_id})
     if token is None:
         await TokenDAL(session).insert(token_data)
     else:
