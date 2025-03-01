@@ -7,6 +7,7 @@ from src.api.auth.router import auth_router_v1
 from src.config.web import WEB_CONFIG
 from src.config.mail import MAIL_CONFIG  # noqa
 from src.utils.router_utils import include_routers
+from src.database.postgres.models import *  # noqa
 
 
 @asynccontextmanager
@@ -14,10 +15,12 @@ async def lifespan(app_: FastAPI):
     from src.api.default.router import default_router_v1
     from src.api.user.router import users_router_v1
     from src.api.genre.router import genres_router_v1
+    from src.api.book.router import books_router_v1
     routers_v1 = [
         auth_router_v1,
         users_router_v1,
         genres_router_v1,
+        books_router_v1,
     ]
 
     root_router_v1 = include_routers(APIRouter(prefix='/v1'), routers_v1)

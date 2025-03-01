@@ -1,5 +1,7 @@
+from typing import List
+
 from sqlalchemy import VARCHAR, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.domain.abc.model import ABCTimestampModel
 
@@ -13,4 +15,12 @@ class Genre(ABCTimestampModel):
 
     name: Mapped[str] = mapped_column(
         VARCHAR(128), nullable=False, unique=True, comment='Название жанра'
+    )
+
+    books: Mapped[List['Book']] = relationship(
+        secondary='book_genre', back_populates='genres'
+    )
+
+    book_associations: Mapped[List['BookGenre']] = relationship(
+        back_populates='genre', overlaps='books,genres'
     )
