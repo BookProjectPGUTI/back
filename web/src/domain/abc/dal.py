@@ -1,15 +1,17 @@
 import math
-from typing import Annotated, Type, List, Dict, Any, Sequence, Sized
+from typing import Annotated, Generic, TypeVar, Type, Dict, Any, List, Sequence, Sized
 
-from sqlalchemy import insert, update, select, Select, func, delete
+from sqlalchemy import insert, update, delete, select, Select, func, BinaryExpression, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import Doc
 
 from src.domain.abc.dto import PaginationDTO, PaginationInfoDTO
 from src.domain.abc.model import ABCModel
 
+ModelType = TypeVar('ModelType', bound=ABCModel)
 
-class ABCDAL:
+
+class ABCDAL(Generic[ModelType]):
     """Абстракция для доступа к сущности с БД."""
 
     __slots__ = (
@@ -18,7 +20,7 @@ class ABCDAL:
     )
 
     model: Annotated[
-        Type[ABCModel],
+        Type[ModelType],
         Doc(
             """
             Модель данных из бд. Через эту модель будут проводиться запросы.
@@ -27,13 +29,13 @@ class ABCDAL:
 
             Пример использования:
             ```python
-            class EntityDAL(ABCDAL):
-                model = Entity
+            class EntityDAL(ABCDAL[Entity]):
+                pass
             ```
 
             """
         ),
-    ] = ABCModel
+    ] = ABCModel  # type: ignore
 
     def __init__(self, session: AsyncSession, pagination: PaginationDTO | None = None):
         self.pagination = None
@@ -47,39 +49,90 @@ class ABCDAL:
         if not isinstance(session, AsyncSession):
             raise TypeError(f'"session" argument in {self.__class__.__name__} should be AsyncSession type.')
 
-        if self.model is ABCDAL.model:
-            msg = f'Class "{self.__class__.__name__}" is not override model class.\n'
-            raise TypeError(msg)
+        try:
+            for orig_class in self.__orig_bases__:  # type: ignore
+                for class_arg in orig_class.__args__:
+                    if issubclass(class_arg, ABCDAL.model):  # type: ignore
+                        self.model = class_arg  # type: ignore
+        except AttributeError:
+            pass
+        except TypeError as e:
+            e.add_note('The model was not passed on like this: class EntityDAL(ABCDAL[Entity]): ...')
+            raise e
 
-        if not issubclass(self.model, ABCDAL.model):
-            msg = f'"{self.model.__class__.__name__}" is not inhered from {ABCDAL.model.__class__.__name__}'
-            raise TypeError(msg)
+        if self.model == ABCDAL.model:  # type: ignore
+            msg = 'The model was not passed on like this: class EntityDAL(ABCDAL[Entity]): ...'
+            raise AttributeError(msg)
 
         self.session = session
 
-    async def insert(self, data: List[Dict[str, Any]], return_value: bool = False) -> None | Sequence:
+    async def insert(
+            self,
+            data: Dict[str, Any] | List[Dict[str, Any]],
+            return_value: bool = False
+    ) -> Sequence[ModelType] | None:
+        if isinstance(data, dict):
+            self._validate_fields_exists(data)
+            data = [data]
+        else:
+            for item in data:
+                self._validate_fields_exists(item)
+
         if len(data) <= 0:
             return None
-        if return_value:
-            return (await self.session.scalars(
-                insert(self.model).returning(self.model, sort_by_parameter_order=True),
-                data
-            )).all()
-        else:
-            await self.session.execute(insert(self.model), data)
 
-    async def update(self, data: List[Dict[str, Any]]):
-        if len(data) > 0:
-            await self.session.execute(update(self.model), data)
+        if return_value:
+            query = insert(
+                self.model
+            ).returning(
+                self.model,
+                sort_by_parameter_order=True
+            )
+
+            result = await self.session.scalars(query, data)
+            return result.all()
+        else:
+            query = insert(  # type: ignore
+                self.model
+            )
+
+            await self.session.execute(query, data)
+            return None
+
+    async def update(
+            self,
+            data: Dict[str, Any] | List[Dict[str, Any]],
+    ):
+        if isinstance(data, dict):
+            self._validate_fields_exists(data)
+            data = [data]
+        else:
+            for item in data:
+                self._validate_fields_exists(item)
+
+        if len(data) <= 0:
+            return None
+        else:
+            query = update(
+                self.model
+            )
+
+            await self.session.execute(query, data)
+            return None
 
     async def delete(self, ids: Sized):
         if not hasattr(self.model, 'id'):
             raise AttributeError('model has no attribute id')
 
         if len(ids) > 0:
-            await self.session.execute(delete(self.model).where(self.model.id.in_(ids)))
+            query = delete(
+                self.model
+            ).where(
+                getattr(self.model, 'id').in_(ids)
+            )
+            await self.session.execute(query)
 
-    async def get_models(self) -> Sequence[ABCModel]:
+    async def get_models(self) -> Sequence[ModelType]:
         query = select(
             self.model
         )
@@ -114,19 +167,59 @@ class ABCDAL:
 
         return query
 
-    async def get_by_id(self, id_: str | int) -> model | None:
-        clauses = []
-        if hasattr(self.model, 'active'):
-            clauses.append(self.model.active.is_(True))
+    async def get_by_filter(
+            self,
+            filters: Dict[str, Any] | None = None,
+            **kwargs: Any,
+    ) -> ModelType | None:
+        if filters is None:
+            filters = {}
 
-        if not hasattr(self.model, 'id'):
-            raise AttributeError('model has no attribute id')
+        filters.update(kwargs)
+        self._validate_fields_exists(filters)
+        clauses = self._get_clauses_from_filters(filters)
 
         query = select(
             self.model
         ).where(
-            self.model.id == id_,
+            *clauses
+        ).limit(1)
+
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_many_by_filter(
+            self,
+            filters: Dict[str, Any] | None = None,
+            **kwargs: Any,
+    ) -> Sequence[ModelType]:
+        if filters is None:
+            filters = {}
+
+        filters.update(kwargs)
+        self._validate_fields_exists(filters)
+        clauses = self._get_clauses_from_filters(filters)
+
+        query = select(
+            self.model
+        ).where(
             *clauses
         )
 
-        return (await self.session.execute(query)).scalar_one_or_none()
+        result = await self.session.scalars(query)
+        return result.all()
+
+    def _get_clauses_from_filters(self, filters: Dict[str, Any]) -> List[BinaryExpression]:
+        return [
+            getattr(self.model, key) == value
+            if value is not None else
+            getattr(self.model, key).is_(value)
+            for key, value in filters.items()
+        ]
+
+    def _validate_fields_exists(self, data: Dict[str, Any]):
+        model_inspect = inspect(self.model)
+        attributes_names = {c_attr.key for c_attr in model_inspect.mapper.column_attrs}  # type: ignore
+        invalid_attributes = attributes_names.difference(data.keys())
+        if len(invalid_attributes) <= 0:
+            raise AttributeError(f'model has no attributes {invalid_attributes}')

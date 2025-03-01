@@ -7,10 +7,8 @@ from src.domain.abc.dal import ABCDAL
 from src.domain.user.model import User
 
 
-class UserDAL(ABCDAL):
-    model = User
-
-    async def insert(self, data: Dict[str, Any]) -> UUID:
+class UserDAL(ABCDAL[User]):
+    async def insert(self, data: Dict[str, Any]) -> UUID:  # noqa
         stmt = text(
             f"""
 INSERT INTO "{self.model.__tablename__}" (
@@ -95,23 +93,3 @@ RETURNING {self.model.id.key};
         )
 
         await self.session.execute(stmt)
-
-    async def get_by_username(self, username: str) -> User | None:
-        stmt = select(
-            self.model
-        ).where(
-            self.model.username == username
-        ).limit(1)
-
-        result = (await self.session.execute(stmt)).scalar_one_or_none()
-        return result
-
-    async def get_by_id(self, user_id: UUID) -> User:
-
-        query = select(
-            self.model
-        ).where(
-            self.model.id == user_id,
-        )
-
-        return (await self.session.execute(query)).scalar_one_or_none()

@@ -47,7 +47,7 @@ async def sign_up(session: AsyncSession, body: SignUpDTO) -> SignUpResponse:
 
 
 async def email_accept(session: AsyncSession, user_id: UUID) -> HTMLResponse:
-    user = await UserDAL(session).get_by_id(user_id)
+    user = await UserDAL(session).get_by_filter(id=user_id)
     if user is None:
         raise USER_NOT_FOUND
 
@@ -101,7 +101,7 @@ async def validate_credentials(session: AsyncSession, body: SignInDTO) -> User:
     if credentials_valid is False:
         raise INVALID_CREDENTIALS
 
-    user = await user_dal.get_by_username(body.username)
+    user = await user_dal.get_by_filter({User.username.key: body.username})
     if user is None:
         raise USER_NOT_FOUND
 
@@ -115,7 +115,7 @@ async def validate_credentials(session: AsyncSession, body: SignInDTO) -> User:
 
 
 async def get_users_me(session: AsyncSession, user_jwt: AccessTokenDTO) -> UserResponse:
-    user = await UserDAL(session).get_by_id(user_jwt.sub)
+    user = await UserDAL(session).get_by_filter(id=user_jwt.sub)
     if user is None:
         raise USER_NOT_FOUND
 
