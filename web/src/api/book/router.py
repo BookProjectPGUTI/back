@@ -1,11 +1,12 @@
 from fastapi import APIRouter, status, Body
 
-from src.api.book.dto import BookCreateDTO, BookCreateResponse
+from src.api.book.dto import BookCreateDTO, BookResponse
 from src.api.genre.dto import GenreResponse
 from src.database.postgres.depends import get_session_depends
 from src.domain.auth.depends import user_depends
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
-from src.domain.book.service import create_book
+from src.domain.book.exception import BOOK_NOT_FOUND, BOOK_ALREADY_EXISTS
+from src.domain.book.service import create_book, get_book
 from src.domain.genre.exception import GENRE_NOT_FOUND
 from src.domain.genre.service import get_genres
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED
@@ -29,11 +30,32 @@ books_router_v1 = APIRouter(
         INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
         GENRE_NOT_FOUND
     ),
-    response_model=BookCreateResponse,
+    response_model=BookResponse,
+)
+async def create_books_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+        body: BookCreateDTO = Body(...)
+) -> BookResponse:
+    return await create_book(session, user, body)
+
+
+@books_router_v1.get(
+    path='',
+    status_code=status.HTTP_200_OK,
+    summary='Активная книга',
+    description=build_description(
+        'Получить активную книгу для обмена.',
+        {123}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        BOOK_NOT_FOUND, BOOK_ALREADY_EXISTS
+    ),
+    response_model=BookResponse,
 )
 async def get_books_endpoint(
         user: user_depends,
         session: get_session_depends,
-        body: BookCreateDTO = Body(...)
-) -> BookCreateResponse:
-    return await create_book(session, user, body)
+) -> BookResponse:
+    return await get_book(session, user)

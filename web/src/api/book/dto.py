@@ -38,7 +38,7 @@ class BookCreateDTO(ABCDTO):
         return v
 
 
-class BookCreateResponse(ABCResponse):
+class BookResponse(ABCResponse):
     id: UUID = Field(..., description='Уникальный ID')
     author: AuthorDTO = Field(..., description='Автор')
     name: str = Field(..., max_length=128, description='Название книги')

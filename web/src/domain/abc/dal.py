@@ -228,6 +228,6 @@ class ABCDAL(Generic[ModelType]):
     def _validate_fields_exists(self, data: Dict[str, Any]):
         model_inspect = inspect(self.model)
         attributes_names = {c_attr.key for c_attr in model_inspect.mapper.column_attrs}  # type: ignore
-        invalid_attributes = attributes_names.difference(data.keys())
-        if len(invalid_attributes) <= 0:
+        invalid_attributes = set(data.keys()).difference(attributes_names)
+        if invalid_attributes:
             raise AttributeError(f'model has no attributes {invalid_attributes}')
