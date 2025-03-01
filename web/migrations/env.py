@@ -32,6 +32,8 @@ pgcrypto = PGExtension(
 register_entities(
     [
         pgcrypto,
+        inactive_else_user_address_function,
+        inactive_else_user_address_trigger,
     ]
 )
 
