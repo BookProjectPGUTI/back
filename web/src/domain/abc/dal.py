@@ -70,7 +70,7 @@ class ABCDAL(Generic[ModelType]):
             self,
             data: Dict[str, Any] | List[Dict[str, Any]],
             return_value: bool = False
-    ) -> Sequence[ModelType] | None:
+    ) -> ModelType | Sequence[ModelType] | None:
         if isinstance(data, dict):
             self._validate_fields_exists(data)
             data = [data]
@@ -90,7 +90,11 @@ class ABCDAL(Generic[ModelType]):
             )
 
             result = await self.session.scalars(query, data)
-            return result.all()
+            items = result.all()
+            if len(items) == 1:
+                return items[0]
+            else:
+                return items
         else:
             query = insert(  # type: ignore
                 self.model
@@ -210,12 +214,16 @@ class ABCDAL(Generic[ModelType]):
         return result.all()
 
     def _get_clauses_from_filters(self, filters: Dict[str, Any]) -> List[BinaryExpression]:
-        return [
-            getattr(self.model, key) == value
-            if value is not None else
-            getattr(self.model, key).is_(value)
-            for key, value in filters.items()
-        ]
+        clauses = []
+        for key, value in filters.items():
+            if value is None:
+                clauses.append(getattr(self.model, key).is_(value))
+            elif isinstance(value, (list, set, tuple)):
+                clauses.append(getattr(self.model, key).in_(value))
+            else:
+                clauses.append(getattr(self.model, key) == value)
+
+        return clauses
 
     def _validate_fields_exists(self, data: Dict[str, Any]):
         model_inspect = inspect(self.model)

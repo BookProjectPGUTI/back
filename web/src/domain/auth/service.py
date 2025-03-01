@@ -74,12 +74,11 @@ class UserFilter:
         self.access_cookies_token = access_cookies_token
         self.refresh_bearer_token = refresh_bearer_token
         self.refresh_cookies_token = refresh_cookies_token
-
         try:
             access_payload = await self.check_access()
             if self.is_make_refresh is True:
                 token_db = await self.check_refresh()
-                await create_tokens(session, response, token_db.user_id)
+                access_payload = await create_tokens(session, response, token_db.user_id)
             return access_payload
         except HTTPException as e:
             if e in (ACCESS_EXPIRES, ACCESS_NOT_FOUND):
@@ -91,18 +90,18 @@ class UserFilter:
 
     async def check_access(self) -> AccessTokenDTO:
         if self.access_bearer_token is not None:
-            token = self.access_bearer_token.credentials
+            access_token = self.access_bearer_token.credentials
         elif self.access_cookies_token is not None:
-            token = self.access_cookies_token
+            access_token = self.access_cookies_token
         else:
             raise ACCESS_NOT_FOUND
 
-        payload = AccessTokenDTO.model_validate(JWT.decode(token))
+        payload = AccessTokenDTO.model_validate(JWT.decode(access_token))
 
         if payload.exp < int(get_now().timestamp()):
             raise ACCESS_EXPIRES
 
-        if payload.exp > int(get_now(hours=1).timestamp()):
+        if payload.exp < int(get_now(hours=1).timestamp()):
             self.is_make_refresh = True
 
         token_db = await TokenDAL(self.session).get_by_filter({Token.user_id.key: payload.sub})
@@ -128,17 +127,17 @@ class UserFilter:
             self
     ) -> Token:
         if self.refresh_bearer_token is not None:
-            token = self.refresh_bearer_token.credentials
+            refresh_token = self.refresh_bearer_token.credentials
         elif self.refresh_cookies_token is not None:
-            token = self.refresh_cookies_token
+            refresh_token = self.refresh_cookies_token
         else:
             raise REFRESH_NOT_FOUND
 
-        payload = RefreshTokenDTO.model_validate(JWT.decode(token))
+        payload = RefreshTokenDTO.model_validate(JWT.decode(refresh_token))
         if payload.exp < int(get_now().timestamp()):
             raise REFRESH_EXPIRES
 
-        if payload.exp > int(get_now(days=2).timestamp()):
+        if payload.exp < int(get_now(days=2).timestamp()):
             self.is_make_refresh = True
 
         token_db = await TokenDAL(self.session).get_by_filter({Token.user_id.key: payload.sub})
