@@ -1,14 +1,12 @@
 from fastapi import APIRouter, status, Body
 
 from src.api.book.dto import BookCreateDTO, BookResponse
-from src.api.genre.dto import GenreResponse
 from src.database.postgres.depends import get_session_depends
 from src.domain.auth.depends import user_depends
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
 from src.domain.book.exception import BOOK_NOT_FOUND, BOOK_ALREADY_EXISTS
-from src.domain.book.service import create_book, get_book
+from src.domain.book.service import create_book, get_book, update_book
 from src.domain.genre.exception import GENRE_NOT_FOUND
-from src.domain.genre.service import get_genres
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED
 from src.utils.router_utils import build_description, build_exception_responses
 
@@ -59,3 +57,24 @@ async def get_books_endpoint(
         session: get_session_depends,
 ) -> BookResponse:
     return await get_book(session, user)
+
+
+@books_router_v1.put(
+    path='',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Обновление книги',
+    description=build_description(
+        'Обновить данные о текущей книге.',
+        {120}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        BOOK_NOT_FOUND
+    ),
+)
+async def update_books_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+        body: BookCreateDTO = Body(...),
+):
+    return await update_book(session, user, body)

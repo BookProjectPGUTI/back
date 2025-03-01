@@ -68,3 +68,40 @@ async def get_book(session: AsyncSession, user_jwt: AccessTokenDTO) -> BookRespo
         raise BOOK_NOT_FOUND
 
     return book
+
+
+async def update_book(session: AsyncSession, user_jwt: AccessTokenDTO, body: BookCreateDTO):
+    book_dal = BookDAL(session)
+
+    book = await book_dal.get_current_book(user_jwt.sub)
+    if book is None:
+        raise BOOK_NOT_FOUND
+
+    author_dal = AuthorDAL(session)
+
+    author = await author_dal.get_by_filter(body.author.model_dump())
+    if author is None:
+        author = await author_dal.insert(body.author.model_dump(), return_value=True)
+
+    book_genre_dal = BookGenreDAL(session)
+    await book_genre_dal.delete_by_book(book.id)
+    await book_genre_dal.insert(
+        [
+            {
+                BookGenre.book_id.key: book.id,
+                BookGenre.genre_id.key: genre_id,
+            }
+            for genre_id in body.genres_ids
+        ]
+    )
+
+    await book_dal.update(
+        {
+            Book.id.key: book.id,
+            Book.user_id.key: user_jwt.sub,
+            Book.author_id.key: author.id,
+            Book.name.key: body.name,
+            Book.isbn.key: body.isbn,
+            Book.published_year.key: body.publication_year,
+        }
+    )
