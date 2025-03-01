@@ -1,7 +1,8 @@
+import typing
 import uuid
 
 from sqlalchemy import func, UUID, VARCHAR, Boolean, text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.domain.abc.model import ABCTimestampModel
 
@@ -43,5 +44,13 @@ class User(ABCTimestampModel):
 
     is_enabled: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text('TRUE'), comment='Заблокирован ли пользователь'
+    )
+
+    genres: Mapped[typing.List['Genre']] = relationship(
+        secondary='wish_list', back_populates='users'
+    )
+
+    genre_associations: Mapped[typing.List['WishList']] = relationship(
+        back_populates='user', overlaps='users,genres'
     )
 

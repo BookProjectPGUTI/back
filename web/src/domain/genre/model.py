@@ -24,3 +24,11 @@ class Genre(ABCTimestampModel):
     book_associations: Mapped[List['BookGenre']] = relationship(
         back_populates='genre', overlaps='books,genres'
     )
+
+    users: Mapped[List['User']] = relationship(
+        secondary='wish_list', back_populates='genres'
+    )
+
+    user_associations: Mapped[List['WishList']] = relationship(
+        back_populates='genre', overlaps='users,genres'
+    )

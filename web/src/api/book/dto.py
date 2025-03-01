@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Set
 from uuid import UUID
 
 from pydantic import Field, conint, field_validator
@@ -26,7 +26,7 @@ class BookCreateDTO(ABCDTO):
         pattern=re.compile(r'^(1[0-9]{3}|20[0-9]{2})$'),
         description='Год выпуска книги (от 1000 до 2099)',
     )
-    genres_ids: List[conint(ge=1, le=MAX_INT_32)] = Field(
+    genres_ids: Set[conint(ge=1, le=MAX_INT_32)] = Field(
         ..., min_items=1, description='Список ID жанров книги'
     )
 
