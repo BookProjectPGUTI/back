@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import HTMLResponse
 
 from src.api.auth.dto import SignUpDTO, SignUpResponse, SignInDTO
-from src.api.user.dto import UserResponse
+from src.api.user.dto import UserResponse, UserNameDTO
 from src.config.auth import AUTH_CONFIG
 from src.config.mail import MAIL_CONFIG
 from src.config.web import WEB_CONFIG
@@ -126,6 +126,25 @@ async def get_users_me(session: AsyncSession, user_jwt: AccessTokenDTO) -> UserR
         second_name=user.second_name,
         email=user.email,
         username=user.username,
+    )
+
+
+async def update_user(
+        session: AsyncSession, user_jwt: AccessTokenDTO, body: UserNameDTO
+):
+    user_dal = UserDAL(session)
+
+    user = await user_dal.get_by_filter(id=user_jwt.sub)
+    if user is None:
+        raise USER_NOT_FOUND
+
+    await user_dal.update(
+        {
+            User.id.key: user_jwt.sub,
+            User.first_name.key: body.first_name,
+            User.second_name.key: body.second_name,
+            User.last_name.key: body.last_name,
+        }
     )
 
 
