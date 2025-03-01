@@ -16,11 +16,13 @@ async def lifespan(app_: FastAPI):
     from src.api.user.router import users_router_v1
     from src.api.genre.router import genres_router_v1
     from src.api.book.router import books_router_v1
+    from src.api.wish_list.router import wish_list_router_v1
     routers_v1 = [
         auth_router_v1,
         users_router_v1,
         genres_router_v1,
         books_router_v1,
+        wish_list_router_v1,
     ]
 
     root_router_v1 = include_routers(APIRouter(prefix='/v1'), routers_v1)

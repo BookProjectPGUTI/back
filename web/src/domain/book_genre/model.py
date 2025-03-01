@@ -3,10 +3,10 @@ import uuid
 from sqlalchemy import UUID, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.domain.abc.model import ABCModel
+from src.domain.abc.model import ABCTimestampModel
 
 
-class BookGenre(ABCModel):
+class BookGenre(ABCTimestampModel):
     __tablename__ = 'book_genre'
 
     book_id: Mapped[uuid.UUID] = mapped_column(

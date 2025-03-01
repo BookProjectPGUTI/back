@@ -5,6 +5,7 @@ from src.domain.book_genre.model import BookGenre
 from src.domain.genre.model import Genre
 from src.domain.token.model import Token
 from src.domain.user.model import User
+from src.domain.wish_list.model import WishList
 
 __all__ = [
     'ABCModel',
@@ -15,5 +16,5 @@ __all__ = [
     'BookGenre',
     'Author',
     'Book',
+    'WishList',
 ]
-
