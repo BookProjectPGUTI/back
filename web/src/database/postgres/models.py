@@ -5,6 +5,11 @@ from src.domain.book_genre.model import BookGenre
 from src.domain.genre.model import Genre
 from src.domain.token.model import Token
 from src.domain.user.model import User
+from src.domain.user_address.model import (
+    UserAddress,
+    inactive_else_user_address_function,
+    inactive_else_user_address_trigger,
+)
 from src.domain.wish_list.model import WishList
 
 __all__ = [
@@ -17,4 +22,7 @@ __all__ = [
     'Author',
     'Book',
     'WishList',
+    'UserAddress',
+    'inactive_else_user_address_function',
+    'inactive_else_user_address_trigger',
 ]
