@@ -29,3 +29,8 @@ USER_UNCONFIRMED = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,
     detail='Почта пользователя не подтверждена.'
 )
+
+USER_NOT_NAMED = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail='Пользователь не ввел ФИО'
+)
