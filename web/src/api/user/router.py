@@ -1,13 +1,13 @@
 from fastapi import APIRouter, status, Body
 
-from src.api.user.dto import UserResponse, UserNameDTO, UserAddressCreateDTO
+from src.api.user.dto import UserResponse, UserNameDTO, UserAddressCreateDTO, UserAddressResponse
 from src.database.postgres.depends import get_session_depends
 from src.domain.auth.depends import user_depends
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
 from src.domain.user.exception import USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED
 from src.domain.user.service import get_users_me, update_user
 from src.domain.user_address.dto import UserAddressDTO
-from src.domain.user_address.service import create_user_address
+from src.domain.user_address.service import create_user_address, get_user_addresses
 from src.utils.router_utils import build_description, build_exception_responses
 
 users_router_v1 = APIRouter(
@@ -75,3 +75,23 @@ async def create_user_address_endpoint(
         body: UserAddressCreateDTO = Body(...),
 ) -> UserAddressDTO:
     return await create_user_address(session, user, body)
+
+
+@users_router_v1.get(
+    path='/addresses',
+    status_code=status.HTTP_200_OK,
+    summary='Список адресов',
+    description=build_description(
+        'Получить список адресов пользователя.',
+        {152}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+    ),
+    response_model=UserAddressResponse,
+)
+async def get_user_addresses_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+) -> UserAddressResponse:
+    return await get_user_addresses(session, user)
