@@ -1,4 +1,6 @@
-from fastapi import APIRouter, status, Body
+from uuid import UUID
+
+from fastapi import APIRouter, status, Body, Path
 
 from src.api.user.dto import UserResponse, UserNameDTO, UserAddressCreateDTO, UserAddressResponse
 from src.database.postgres.depends import get_session_depends
@@ -7,7 +9,8 @@ from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, RE
 from src.domain.user.exception import USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED
 from src.domain.user.service import get_users_me, update_user
 from src.domain.user_address.dto import UserAddressDTO
-from src.domain.user_address.service import create_user_address, get_user_addresses
+from src.domain.user_address.exception import USER_ADDRESS_NOT_FOUND
+from src.domain.user_address.service import create_user_address, get_user_addresses, update_user_address
 from src.utils.router_utils import build_description, build_exception_responses
 
 users_router_v1 = APIRouter(
@@ -95,3 +98,25 @@ async def get_user_addresses_endpoint(
         session: get_session_depends,
 ) -> UserAddressResponse:
     return await get_user_addresses(session, user)
+
+
+@users_router_v1.put(
+    path='/addresses/{user_address_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Обновить адрес',
+    description=build_description(
+        'Обновить информации об адресе.',
+        {150}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        USER_ADDRESS_NOT_FOUND
+    ),
+)
+async def update_user_address_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+        user_address_id: UUID = Path(...),
+        body: UserAddressCreateDTO = Body(...),
+):
+    await update_user_address(session, user, user_address_id, body)
