@@ -1,9 +1,11 @@
 import re
+from typing import List
 from uuid import UUID
 
 from pydantic import EmailStr, Field
 
 from src.domain.abc.dto import ABCResponse, ABCDTO
+from src.domain.user_address.dto import UserAddressDTO
 
 
 class UserResponse(ABCResponse):
@@ -69,3 +71,7 @@ class UserAddressCreateDTO(ABCDTO):
         examples=['45']
     )
     is_active: bool = Field(True, description='Активность адреса')
+
+
+class UserAddressResponse(ABCResponse):
+    addresses: List[UserAddressDTO] = Field(..., description='Список адресов')
