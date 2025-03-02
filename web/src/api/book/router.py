@@ -6,7 +6,10 @@ from src.domain.auth.depends import user_depends
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
 from src.domain.book.exception import BOOK_NOT_FOUND, BOOK_ALREADY_EXISTS
 from src.domain.book.service import create_book, get_book, update_book
+from src.domain.exchange.service import validate_current_exchange
 from src.domain.genre.exception import GENRE_NOT_FOUND
+from src.domain.maker.exception import MAKER_ALREADY_EXISTS
+from src.domain.taker.exception import TAKER_ALREADY_EXISTS
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED
 from src.utils.router_utils import build_description, build_exception_responses
 
@@ -26,7 +29,7 @@ books_router_v1 = APIRouter(
     ),
     responses=build_exception_responses(
         INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
-        GENRE_NOT_FOUND
+        GENRE_NOT_FOUND, MAKER_ALREADY_EXISTS, TAKER_ALREADY_EXISTS
     ),
     response_model=BookResponse,
 )
@@ -35,6 +38,7 @@ async def create_books_endpoint(
         session: get_session_depends,
         body: BookCreateDTO = Body(...)
 ) -> BookResponse:
+    await validate_current_exchange(session, user)
     return await create_book(session, user, body)
 
 
@@ -69,7 +73,7 @@ async def get_books_endpoint(
     ),
     responses=build_exception_responses(
         INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
-        BOOK_NOT_FOUND
+        BOOK_NOT_FOUND, MAKER_ALREADY_EXISTS, TAKER_ALREADY_EXISTS
     ),
 )
 async def update_books_endpoint(
@@ -77,4 +81,5 @@ async def update_books_endpoint(
         session: get_session_depends,
         body: BookCreateDTO = Body(...),
 ):
+    await validate_current_exchange(session, user)
     return await update_book(session, user, body)
