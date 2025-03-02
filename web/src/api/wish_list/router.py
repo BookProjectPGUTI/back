@@ -4,7 +4,10 @@ from src.api.wish_list.dto import WishListCreateDTO, WishListResponse
 from src.database.postgres.depends import get_session_depends
 from src.domain.auth.depends import user_depends
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
+from src.domain.exchange.service import validate_current_exchange
 from src.domain.genre.exception import GENRE_NOT_FOUND
+from src.domain.maker.exception import MAKER_ALREADY_EXISTS
+from src.domain.taker.exception import TAKER_ALREADY_EXISTS
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED
 from src.domain.wish_list.exception import WISH_LIST_NOT_FOUND
 from src.domain.wish_list.service import create_wish_list, get_wish_list
@@ -26,7 +29,7 @@ wish_list_router_v1 = APIRouter(
     ),
     responses=build_exception_responses(
         INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
-        GENRE_NOT_FOUND,
+        GENRE_NOT_FOUND, MAKER_ALREADY_EXISTS, TAKER_ALREADY_EXISTS
     ),
     response_model=WishListResponse,
 )
@@ -35,6 +38,7 @@ async def create_wish_list_endpoint(
         session: get_session_depends,
         body: WishListCreateDTO = Body(...),
 ) -> WishListResponse:
+    await validate_current_exchange(session, user)
     return await create_wish_list(session, user, body)
 
 
