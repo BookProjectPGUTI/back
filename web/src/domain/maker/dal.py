@@ -5,7 +5,9 @@ from sqlalchemy import select, func, ScalarSelect, or_, FunctionFilter
 from sqlalchemy.orm import aliased, InstrumentedAttribute
 
 from src.api.book.dto import BookResponse
-from src.api.exchange.dto import MakerMatchDTO, ExchangeResponse, MakerDTO, TakerDTO
+from src.api.exchange.dto import ExchangeResponse
+from src.domain.taker.dto import TakerDTO
+from src.domain.maker.dto import MakerDTO, MakerMatchDTO
 from src.domain.abc.dal import ABCDAL
 from src.domain.author.model import Author
 from src.domain.book.model import Book
@@ -94,10 +96,14 @@ class MakerDAL(ABCDAL[Maker]):
         ).join(
             GenreAlias,
             Book.genres
+        ).outerjoin(
+            Taker,
+            self.model.taker
         ).where(
             self.model.is_accepted.is_(False),
             self.model.is_received.is_(False),
-            self.model.user_id != user_id
+            self.model.user_id != user_id,
+            Taker.id.is_(None),
         ).group_by(
             self.model.id,
             Book.id,
@@ -210,10 +216,12 @@ class MakerDAL(ABCDAL[Maker]):
             Book,
             Author,
             User,
+
             Taker,
             TakerBook,
             TakerAuthor,
             TakerUser,
+
             book_genre_ids_subquery.label('book_genre_ids'),
             book_genre_names_subquery.label('book_genre_names'),
 
