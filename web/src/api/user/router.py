@@ -6,7 +6,7 @@ from src.api.user.dto import UserResponse, UserNameDTO, UserAddressCreateDTO, Us
 from src.database.postgres.depends import get_session_depends
 from src.domain.auth.depends import user_depends
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
-from src.domain.exchange.service import validate_current_exchange
+from src.domain.exchange.service import validate_user_can_edit_setup
 from src.domain.maker.exception import MAKER_ALREADY_EXISTS
 from src.domain.taker.exception import TAKER_ALREADY_EXISTS
 from src.domain.user.exception import USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED
@@ -60,7 +60,7 @@ async def update_user_endpoint(
         session: get_session_depends,
         body: UserNameDTO = Body(...),
 ):
-    await validate_current_exchange(session, user)
+    await validate_user_can_edit_setup(session, user)
     return await update_user(session, user, body)
 
 
@@ -83,7 +83,7 @@ async def create_user_address_endpoint(
         session: get_session_depends,
         body: UserAddressCreateDTO = Body(...),
 ) -> UserAddressDTO:
-    await validate_current_exchange(session, user)
+    await validate_user_can_edit_setup(session, user)
     return await create_user_address(session, user, body)
 
 
@@ -126,5 +126,5 @@ async def update_user_address_endpoint(
         user_address_id: UUID = Path(...),
         body: UserAddressCreateDTO = Body(...),
 ):
-    await validate_current_exchange(session, user)
+    await validate_user_can_edit_setup(session, user)
     await update_user_address(session, user, user_address_id, body)

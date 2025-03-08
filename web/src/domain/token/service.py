@@ -58,13 +58,13 @@ async def create_tokens(
 
     token_data = [
         {
-            Token.user_id.key: user_id,
-            Token.refresh_id.key: refresh_payload.jti,
-            Token.access_id.key: access_payload.jti,
+            Token.user_id: user_id,
+            Token.refresh_id: refresh_payload.jti,
+            Token.access_id: access_payload.jti,
         }
     ]
 
-    token = await TokenDAL(session).get_by_filter({Token.user_id.key: user_id})
+    token = await TokenDAL(session).get_by_filter({Token.user_id: user_id})
     if token is None:
         await TokenDAL(session).insert(token_data)
     else:

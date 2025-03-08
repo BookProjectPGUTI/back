@@ -46,11 +46,11 @@ class User(ABCTimestampModel):
         Boolean, nullable=False, server_default=text('TRUE'), comment='Заблокирован ли пользователь'
     )
 
-    genres: Mapped[typing.List['Genre']] = relationship(
+    genres: Mapped[typing.List['Genre']] = relationship(  # type: ignore
         secondary='wish_list', back_populates='users'
     )
 
-    genre_associations: Mapped[typing.List['WishList']] = relationship(
+    genre_associations: Mapped[typing.List['WishList']] = relationship(  # type: ignore
         back_populates='user', overlaps='users,genres'
     )
 

@@ -28,7 +28,7 @@ def upgrade() -> None:
         signature="inactive_else_user_address_function()",
         definition='RETURNS TRIGGER AS $$\n    DECLARE\n        active_count INT;\n    BEGIN\n        IF OLD.is_active = TRUE AND NEW.is_active = TRUE THEN\n            RETURN NEW;\n        END IF;\n\n        SELECT COUNT(*) INTO active_count \n        FROM public.user_address \n        WHERE public.user_address.is_active = TRUE AND public.user_address.id <> NEW.id;\n\n        IF NEW.is_active = TRUE THEN\n            UPDATE public.user_address\n            SET is_active = FALSE\n            WHERE public.user_address.is_active = TRUE AND public.user_address.id <> NEW.id;\n\n        ELSE\n            IF active_count = 0 THEN\n                NEW.is_active := TRUE;\n            END IF;\n        END IF;\n\n        RETURN NEW;\n    END;\n    $$ LANGUAGE plpgsql'
     )
-    op.create_entity(public_inactive_else_user_address_function)
+    op.create_entity(public_inactive_else_user_address_function)  # type: ignore
 
     public_user_address_inactive_else_user_address_trigger = PGTrigger(
         schema="public",
@@ -37,7 +37,7 @@ def upgrade() -> None:
         is_constraint=False,
         definition='BEFORE INSERT OR UPDATE ON user_address\n        FOR EACH ROW\n        WHEN (pg_trigger_depth() = 0)\n        EXECUTE FUNCTION public.inactive_else_user_address_function()'
     )
-    op.create_entity(public_user_address_inactive_else_user_address_trigger)
+    op.create_entity(public_user_address_inactive_else_user_address_trigger)  # type: ignore
 
     # ### end Alembic commands ###
 
@@ -51,13 +51,13 @@ def downgrade() -> None:
         is_constraint=False,
         definition='BEFORE INSERT OR UPDATE ON user_address\n        FOR EACH ROW\n        WHEN (pg_trigger_depth() = 0)\n        EXECUTE FUNCTION public.inactive_else_user_address_function()'
     )
-    op.drop_entity(public_user_address_inactive_else_user_address_trigger)
+    op.drop_entity(public_user_address_inactive_else_user_address_trigger)  # type: ignore
 
     public_inactive_else_user_address_function = PGFunction(
         schema="public",
         signature="inactive_else_user_address_function()",
         definition='RETURNS TRIGGER AS $$\n    DECLARE\n        active_count INT;\n    BEGIN\n        IF OLD.is_active = TRUE AND NEW.is_active = TRUE THEN\n            RETURN NEW;\n        END IF;\n\n        SELECT COUNT(*) INTO active_count \n        FROM public.user_address \n        WHERE public.user_address.is_active = TRUE AND public.user_address.id <> NEW.id;\n\n        IF NEW.is_active = TRUE THEN\n            UPDATE public.user_address\n            SET is_active = FALSE\n            WHERE public.user_address.is_active = TRUE AND public.user_address.id <> NEW.id;\n\n        ELSE\n            IF active_count = 0 THEN\n                NEW.is_active := TRUE;\n            END IF;\n        END IF;\n\n        RETURN NEW;\n    END;\n    $$ LANGUAGE plpgsql'
     )
-    op.drop_entity(public_inactive_else_user_address_function)
+    op.drop_entity(public_inactive_else_user_address_function)  # type: ignore
 
     # ### end Alembic commands ###

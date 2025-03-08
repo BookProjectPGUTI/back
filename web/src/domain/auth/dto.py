@@ -9,7 +9,7 @@ from src.utils.time_utils import get_now
 
 
 class AccessTokenDTO(ABCDTO):
-    jti: UUID = Field(..., default_factory=uuid.uuid4, description='ID токена')
+    jti: UUID = Field(default_factory=uuid.uuid4, description='ID токена')
     sub: UUID = Field(..., description='ID пользователя')
     exp: int = Field(..., description='Дата последней активности в TIMESTAMP')
 
@@ -22,7 +22,7 @@ class AccessTokenDTO(ABCDTO):
 
 
 class RefreshTokenDTO(ABCDTO):
-    jti: UUID = Field(..., default_factory=uuid.uuid4, description='ID токена')
+    jti: UUID = Field(default_factory=uuid.uuid4, description='ID токена')
     sub: UUID = Field(..., description='ID пользователя')
     exp: int = Field(..., description='Дата последней активности в TIMESTAMP')
 

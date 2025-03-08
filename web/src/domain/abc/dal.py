@@ -1,14 +1,32 @@
 import math
-from typing import Annotated, Generic, TypeVar, Type, Dict, Any, List, Sequence, Sized
+from typing import Annotated, Generic, TypeVar, Type, Dict, Any, List, Sequence
 
 from sqlalchemy import insert, update, delete, select, Select, func, BinaryExpression, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 from typing_extensions import Doc
 
 from src.domain.abc.dto import PaginationDTO, PaginationInfoDTO
 from src.domain.abc.model import ABCModel
 
 ModelType = TypeVar('ModelType', bound=ABCModel)
+
+_DATA_ITEM_TYPE = (
+    Dict[str, Any] |
+    Dict[InstrumentedAttribute, Any] |
+    Dict[str | InstrumentedAttribute, Any]
+)
+
+_DATA_LIST_TYPE = (
+    List[Dict[str, Any]] |
+    List[Dict[InstrumentedAttribute, Any]] |
+    List[Dict[str | InstrumentedAttribute, Any]]
+)
+
+_DATA_TYPE = (
+    _DATA_ITEM_TYPE |
+    _DATA_LIST_TYPE
+)
 
 
 class ABCDAL(Generic[ModelType]):
@@ -68,18 +86,21 @@ class ABCDAL(Generic[ModelType]):
 
     async def insert(
             self,
-            data: Dict[str, Any] | List[Dict[str, Any]],
+            data: _DATA_TYPE,
             return_value: bool = False
     ) -> ModelType | Sequence[ModelType] | None:
         if isinstance(data, dict):
             self._validate_fields_exists(data)
-            data = [data]
+            data_list: list[dict] = [data]
         else:
             for item in data:
                 self._validate_fields_exists(item)
+            data_list = data
 
-        if len(data) <= 0:
+        if len(data_list) <= 0:
             return None
+
+        params = self._build_params_from_data(data_list)
 
         if return_value:
             query = insert(
@@ -89,7 +110,7 @@ class ABCDAL(Generic[ModelType]):
                 sort_by_parameter_order=True
             )
 
-            result = await self.session.scalars(query, data)
+            result = await self.session.scalars(query, params)
             items = result.all()
             if len(items) == 1:
                 return items[0]
@@ -100,41 +121,50 @@ class ABCDAL(Generic[ModelType]):
                 self.model
             )
 
-            await self.session.execute(query, data)
+            await self.session.execute(query, params)
             return None
 
     async def update(
             self,
-            data: Dict[str, Any] | List[Dict[str, Any]],
+            data: _DATA_TYPE,
     ):
         if isinstance(data, dict):
             self._validate_fields_exists(data)
-            data = [data]
+            data_list: list[dict] = [data]
         else:
             for item in data:
                 self._validate_fields_exists(item)
+            data_list = data
 
-        if len(data) <= 0:
-            return None
-        else:
-            query = update(
-                self.model
-            )
-
-            await self.session.execute(query, data)
+        if len(data_list) <= 0:
             return None
 
-    async def delete(self, ids: Sized):
-        if not hasattr(self.model, 'id'):
-            raise AttributeError('model has no attribute id')
+        params = self._build_params_from_data(data_list)
 
-        if len(ids) > 0:
-            query = delete(
-                self.model
-            ).where(
-                getattr(self.model, 'id').in_(ids)
-            )
-            await self.session.execute(query)
+        query = update(
+            self.model
+        )
+        await self.session.execute(query, params)
+
+    async def delete(
+            self,
+            filters: _DATA_ITEM_TYPE | None = None,
+            **kwargs: Any,
+    ):
+        if filters is None:
+            filters = {}
+
+        filters.update(**kwargs)
+        self._validate_fields_exists(filters)
+        clauses = self._get_clauses_from_filters(filters)
+
+        query = delete(
+            self.model
+        ).where(
+            *clauses
+        )
+
+        await self.session.execute(query)
 
     async def get_models(self) -> Sequence[ModelType]:
         query = select(
@@ -173,13 +203,13 @@ class ABCDAL(Generic[ModelType]):
 
     async def get_by_filter(
             self,
-            filters: Dict[str, Any] | None = None,
+            filters: _DATA_ITEM_TYPE | None = None,
             **kwargs: Any,
     ) -> ModelType | None:
         if filters is None:
             filters = {}
 
-        filters.update(kwargs)
+        filters.update(**kwargs)
         self._validate_fields_exists(filters)
         clauses = self._get_clauses_from_filters(filters)
 
@@ -194,13 +224,13 @@ class ABCDAL(Generic[ModelType]):
 
     async def get_many_by_filter(
             self,
-            filters: Dict[str, Any] | None = None,
+            filters: _DATA_ITEM_TYPE | None = None,
             **kwargs: Any,
     ) -> Sequence[ModelType]:
         if filters is None:
             filters = {}
 
-        filters.update(kwargs)
+        filters.update(**kwargs)
         self._validate_fields_exists(filters)
         clauses = self._get_clauses_from_filters(filters)
 
@@ -213,10 +243,15 @@ class ABCDAL(Generic[ModelType]):
         result = await self.session.scalars(query)
         return result.all()
 
-    def _get_clauses_from_filters(self, filters: Dict[str, Any]) -> List[BinaryExpression]:
+    def _get_clauses_from_filters(self, filters: _DATA_ITEM_TYPE) -> List[BinaryExpression]:
         clauses = []
-        for key, value in filters.items():
-            if value is None:
+        for field, value in filters.items():
+            if isinstance(field, InstrumentedAttribute):
+                key = field.key
+            else:
+                key = field
+
+            if value is None or isinstance(value, bool):
                 clauses.append(getattr(self.model, key).is_(value))
             elif isinstance(value, (list, set, tuple)):
                 clauses.append(getattr(self.model, key).in_(value))
@@ -225,9 +260,28 @@ class ABCDAL(Generic[ModelType]):
 
         return clauses
 
-    def _validate_fields_exists(self, data: Dict[str, Any]):
+    def _validate_fields_exists(self, data: _DATA_ITEM_TYPE):
         model_inspect = inspect(self.model)
         attributes_names = {c_attr.key for c_attr in model_inspect.mapper.column_attrs}  # type: ignore
-        invalid_attributes = set(data.keys()).difference(attributes_names)
+
+        invalid_attributes = {
+            field.key
+            if isinstance(field, InstrumentedAttribute) else
+            field
+            for field in data.keys()
+        }.difference(attributes_names)
         if invalid_attributes:
             raise AttributeError(f'model has no attributes {invalid_attributes}')
+
+    @staticmethod
+    def _build_params_from_data(
+            data: _DATA_LIST_TYPE
+    ) -> List[Dict[str, Any]]:
+        return [
+            {
+                field.key if isinstance(field, InstrumentedAttribute) else field: value
+                for field, value in item.items()
+            }
+            for item in data
+        ]
+

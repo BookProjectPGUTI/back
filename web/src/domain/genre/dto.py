@@ -1,17 +1,19 @@
-from typing import List, Self
+from typing import List, Self, Annotated
 
 from pydantic import Field
 
 from src.domain.abc.dto import ABCDTO
-from src.utils.constansts import MAX_INT_32
+from src.utils.constansts import MAX_INT_32, INT_32
 
 
 class GenreDTO(ABCDTO):
-    id: int = Field(..., ge=1, le=MAX_INT_32, description='Уникальный ID')
+    id: Annotated[int, INT_32] = Field(..., description='Уникальный ID')
     name: str = Field(..., max_length=128, description='Название жанра')
 
     @classmethod
-    def build_from_lists(cls, genre_ids: List[int], genre_names: List[str]) -> List[Self]:
+    def build_from_lists(cls, genre_ids: List[int] | None, genre_names: List[str] | None) -> List[Self]:
+        if genre_ids is None or genre_names is None:
+            return []
         return [
             cls(
                 id=genre_id,

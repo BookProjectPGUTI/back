@@ -24,8 +24,8 @@ async def create_wish_list(
     await wish_list_dal.insert(
         [
             {
-                WishList.user_id.key: user_jwt.sub,
-                WishList.genre_id.key: genre_id
+                WishList.user_id: user_jwt.sub,
+                WishList.genre_id: genre_id
             }
             for genre_id in body.genres_ids
         ]

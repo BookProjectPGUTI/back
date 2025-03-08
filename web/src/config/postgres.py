@@ -28,6 +28,6 @@ class PostgresConfig(BaseSettings):
 
 
 try:
-    POSTGRES_CONFIG = PostgresConfig(_env_file='.env', _env_prefix='POSTGRES_')  # type: ignore
+    POSTGRES_CONFIG = PostgresConfig(_env_file='.env', _env_prefix='POSTGRES_')
 except ValidationError:
-    ALEMBIC_POSTGRES_CONFIG = PostgresConfig(_env_file='.migration.env', _env_prefix='POSTGRES_')  # type: ignore
+    ALEMBIC_POSTGRES_CONFIG = PostgresConfig(_env_file='.migration.env', _env_prefix='POSTGRES_')

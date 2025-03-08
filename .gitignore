@@ -129,6 +129,7 @@ celerybeat.pid
 
 # Environments
 .env
+.migration.env
 .venv
 env/
 venv/
@@ -169,3 +170,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+.idea
+.vscode
+.gigade

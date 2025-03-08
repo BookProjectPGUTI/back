@@ -41,7 +41,7 @@ def upgrade() -> None:
         schema="public",
         signature="pgcrypto"
     )
-    op.create_entity(public_pgcrypto)
+    op.create_entity(public_pgcrypto)  # type: ignore
 
     # ### end Alembic commands ###
 
@@ -52,7 +52,7 @@ def downgrade() -> None:
         schema="public",
         signature="pgcrypto"
     )
-    op.drop_entity(public_pgcrypto)
+    op.drop_entity(public_pgcrypto)  # type: ignore
 
     op.drop_table('user')
     # ### end Alembic commands ###
