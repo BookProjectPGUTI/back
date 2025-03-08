@@ -1,13 +1,15 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.exchange.dto import MakerCreateResponse, MakerResponse, ExchangeResponse
+from src.api.exchange.dto import MakerCreateResponse, MakerResponse
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.book.dal import BookDAL
 from src.domain.book.exception import BOOK_NOT_FOUND
-from src.domain.exchange.exception import EXCHANGE_NOT_FOUND
 from src.domain.maker.dal import MakerDAL
-from src.domain.maker.exception import MAKER_NOT_FOUND
+from src.domain.maker.exception import MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, MAKER_ALREADY_RECEIVED
 from src.domain.maker.model import Maker
+from src.domain.taker.dal import TakerDAL
+from src.domain.taker.exception import TAKER_ALREADY_RECEIVED
+from src.domain.taker.model import Taker
 
 
 async def create_maker(
@@ -50,13 +52,31 @@ async def get_makers(
     )
 
 
-async def get_current_exchange(
+async def delete_maker(
         user: AccessTokenDTO,
-        session: AsyncSession
-) -> ExchangeResponse:
+        session: AsyncSession,
+):
     maker_dal = MakerDAL(session)
+    taker_dal = TakerDAL(session)
 
-    exchange = await maker_dal.get_current_maker(user.sub)
-    if exchange is None:
-        raise EXCHANGE_NOT_FOUND
-    return exchange
+    maker = await maker_dal.get_by_filter(
+        {
+            Maker.user_id: user.sub,
+            Maker.is_received: False,
+        }
+    )
+    if maker is None:
+        raise MAKER_NOT_FOUND
+    if maker.is_accepted is True:
+        raise MAKER_ALREADY_ACCEPTED
+    if maker.is_received is True:
+        raise MAKER_ALREADY_RECEIVED
+
+    taker = await taker_dal.get_by_filter({Taker.id: maker.id})
+    if taker is not None:
+        if taker.is_received is True:
+            raise TAKER_ALREADY_RECEIVED
+
+        await taker_dal.delete(id=taker.id)
+
+    await maker_dal.delete(id=maker.id)

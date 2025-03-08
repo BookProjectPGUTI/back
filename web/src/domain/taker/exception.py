@@ -4,3 +4,8 @@ TAKER_ALREADY_EXISTS = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail='Пользователь уже выбрал пару для обмена.'
 )
+
+TAKER_ALREADY_RECEIVED = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail='Тейкер уже подтвердил получение.'
+)

@@ -1,11 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.exchange.dto import ExchangeResponse
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.book.dal import BookDAL
 from src.domain.book.exception import BOOK_NOT_FOUND
 from src.domain.book_genre.dal import BookGenreDAL
 from src.domain.book_genre.exception import BOOK_GENRE_NOT_FOUND
 from src.domain.book_genre.model import BookGenre
+from src.domain.exchange.exception import EXCHANGE_NOT_FOUND
 from src.domain.maker.dal import MakerDAL
 from src.domain.maker.exception import MAKER_ALREADY_EXISTS
 from src.domain.maker.model import Maker
@@ -90,3 +92,15 @@ async def validate_user_complete_setup(session: AsyncSession, user: AccessTokenD
     )
     if len(wish_list) < 1:
         raise WISH_LIST_NOT_FOUND
+
+
+async def get_current_exchange(
+        user: AccessTokenDTO,
+        session: AsyncSession
+) -> ExchangeResponse:
+    maker_dal = MakerDAL(session)
+
+    exchange = await maker_dal.get_current_maker(user.sub)
+    if exchange is None:
+        raise EXCHANGE_NOT_FOUND
+    return exchange
