@@ -9,3 +9,18 @@ MAKER_NOT_FOUND = HTTPException(
     status_code=status.HTTP_404_NOT_FOUND,
     detail='Мейкер не найден'
 )
+
+MAKER_ALREADY_TAKEN = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail='Мейкер уже занят.'
+)
+
+MAKER_ALREADY_ACCEPTED = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail='Мейкер уже принял обмен.'
+)
+
+MAKER_ALREADY_RECEIVED = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail='Мейкер уже подтвердил получение.'
+)
