@@ -16,11 +16,33 @@ class MakerCreateResponse(ABCResponse):
 
 class MakerDTO(ABCDTO):
     id: UUID = Field(..., description='ID мейкера')
+    is_accepted: bool = Field(..., description='Подтверждение обмена')
+    is_received: bool = Field(..., description='Подтверждение получение')
     user: UserShareDTO = Field(..., description='Пользователь')
     book: BookResponse = Field(..., description='Книга')
-    taker_genre_matches: List[GenreDTO] = Field(..., min_items=0, description='Совпавшие жанры книги у тейкера')
-    maker_genre_matches: List[GenreDTO] = Field(..., min_items=0, description='Совпавшие жанры книги у мейкера')
+
+
+class MakerMatchDTO(ABCDTO):
+    id: UUID = Field(..., description='ID мейкера')
+    user: UserShareDTO = Field(..., description='Пользователь')
+    book: BookResponse = Field(..., description='Книга')
+    taker_genre_matches: List[GenreDTO] = Field(..., description='Совпавшие жанры книги у тейкера')
+    maker_genre_matches: List[GenreDTO] = Field(..., description='Совпавшие жанры книги у мейкера')
 
 
 class MakerResponse(ABCResponse):
-    makers: List[MakerDTO] = Field(..., description='Предложения по обмену')
+    makers: List[MakerMatchDTO] = Field(..., description='Предложения по обмену')
+
+
+class TakerDTO(ABCDTO):
+    id: UUID = Field(..., description='ID тейкера')
+    user: UserShareDTO = Field(..., description='Пользователь')
+    book: BookResponse = Field(..., description='Книга')
+    is_received: bool = Field(..., description='Подтверждение получение')
+
+
+class ExchangeResponse(ABCResponse):
+    maker: MakerDTO = Field(..., description='Мейкер')
+    taker: TakerDTO | None = Field(..., description='Тейкер')
+    taker_genre_matches: List[GenreDTO] = Field(..., description='Совпавшие жанры книги у тейкера')
+    maker_genre_matches: List[GenreDTO] = Field(..., description='Совпавшие жанры книги у мейкера')

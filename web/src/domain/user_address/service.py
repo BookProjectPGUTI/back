@@ -30,7 +30,7 @@ async def get_user_addresses(
         user: AccessTokenDTO,
 ) -> UserAddressResponse:
     addresses = await UserAddressDAL(session).get_many_by_filter(
-        {UserAddress.user_id.key: user.sub}
+        {UserAddress.user_id: user.sub}
     )
     return UserAddressResponse(
         addresses=addresses

@@ -51,14 +51,14 @@ class Book(ABCTimestampModel):
         VARCHAR(4), nullable=False, comment='Год публикации книги'
     )
 
-    user: Mapped[_user()] = relationship()
+    user: Mapped[_user()] = relationship()  # type: ignore
 
-    author: Mapped[_author()] = relationship()
+    author: Mapped[_author()] = relationship()  # type: ignore
 
-    genres: Mapped[typing.List['Genre']] = relationship(
+    genres: Mapped[typing.List['Genre']] = relationship(  # type: ignore
         secondary='book_genre', back_populates='books'
     )
 
-    genre_associations: Mapped[typing.List['BookGenre']] = relationship(
+    genre_associations: Mapped[typing.List['BookGenre']] = relationship(  # type: ignore
         back_populates='book', overlaps='books,genres'
     )

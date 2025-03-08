@@ -32,5 +32,5 @@ class Token(ABCTimestampModel):
         UUID, nullable=False, comment='ID из jti access токена'
     )
 
-    user: Mapped[_user()] = relationship()
+    user: Mapped[_user()] = relationship()  # type: ignore
 

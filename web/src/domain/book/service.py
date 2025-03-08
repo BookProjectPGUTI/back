@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.book.dto import BookCreateDTO, BookResponse
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.author.dal import AuthorDAL
+from src.domain.author.exception import AUTHOR_NOT_FOUND
 from src.domain.book.dal import BookDAL
 from src.domain.book.exception import BOOK_NOT_FOUND, BOOK_ALREADY_EXISTS
 from src.domain.book.model import Book
@@ -19,7 +20,9 @@ async def create_book(
 
     author = await author_dal.get_by_filter(body.author.model_dump())
     if author is None:
-        author = await author_dal.insert(body.author.model_dump(), return_value=True)
+        author = await author_dal.insert(body.author.model_dump(), return_value=True)  # type: ignore
+    if author is None:
+        raise AUTHOR_NOT_FOUND
 
     genres = await GenreDAL(session).get_many_by_filter(id=body.genres_ids)
     if len(genres) != len(body.genres_ids):
@@ -31,22 +34,24 @@ async def create_book(
     if book is not None:
         raise BOOK_ALREADY_EXISTS
 
-    book = await BookDAL(session).insert(
+    book = await BookDAL(session).insert(  # type: ignore
         {
-            Book.user_id.key: user_jwt.sub,
-            Book.author_id.key: author.id,
-            Book.name.key: body.name,
-            Book.isbn.key: body.isbn,
-            Book.published_year.key: body.publication_year,
+            Book.user_id: user_jwt.sub,
+            Book.author_id: author.id,
+            Book.name: body.name,
+            Book.isbn: body.isbn,
+            Book.published_year: body.publication_year,
         },
         return_value=True
     )
+    if book is None:
+        raise BOOK_NOT_FOUND
 
     await BookGenreDAL(session).insert(
         [
             {
-                BookGenre.book_id.key: book.id,
-                BookGenre.genre_id.key: genre.id,
+                BookGenre.book_id: book.id,
+                BookGenre.genre_id: genre.id,
             }
             for genre in genres
         ]
@@ -81,15 +86,17 @@ async def update_book(session: AsyncSession, user_jwt: AccessTokenDTO, body: Boo
 
     author = await author_dal.get_by_filter(body.author.model_dump())
     if author is None:
-        author = await author_dal.insert(body.author.model_dump(), return_value=True)
+        author = await author_dal.insert(body.author.model_dump(), return_value=True)  # type: ignore
+    if author is None:
+        raise AUTHOR_NOT_FOUND
 
     book_genre_dal = BookGenreDAL(session)
     await book_genre_dal.delete_by_book(book.id)
     await book_genre_dal.insert(
         [
             {
-                BookGenre.book_id.key: book.id,
-                BookGenre.genre_id.key: genre_id,
+                BookGenre.book_id: book.id,
+                BookGenre.genre_id: genre_id,
             }
             for genre_id in body.genres_ids
         ]
@@ -97,11 +104,11 @@ async def update_book(session: AsyncSession, user_jwt: AccessTokenDTO, body: Boo
 
     await book_dal.update(
         {
-            Book.id.key: book.id,
-            Book.user_id.key: user_jwt.sub,
-            Book.author_id.key: author.id,
-            Book.name.key: body.name,
-            Book.isbn.key: body.isbn,
-            Book.published_year.key: body.publication_year,
+            Book.id: book.id,
+            Book.user_id: user_jwt.sub,
+            Book.author_id: author.id,
+            Book.name: body.name,
+            Book.isbn: body.isbn,
+            Book.published_year: body.publication_year,
         }
     )

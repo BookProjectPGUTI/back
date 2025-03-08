@@ -9,4 +9,4 @@ class WebConfig(BaseSettings):
     url: str
 
 
-WEB_CONFIG = WebConfig()  # type: ignore
+WEB_CONFIG = WebConfig()

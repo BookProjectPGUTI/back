@@ -13,6 +13,7 @@ from src.config.web import WEB_CONFIG
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.mail.sign_up import build_sign_up_mail
 from src.domain.token.dal import TokenDAL
+from src.domain.token.model import Token
 from src.domain.user.dal import UserDAL
 from src.domain.user.exception import EMAIL_ALREADY_EXISTS, USERNAME_ALREADY_EXISTS, USER_NOT_FOUND, \
     USER_ALREADY_CONFIRMED, USER_DISABLED, USER_UNCONFIRMED
@@ -101,7 +102,7 @@ async def validate_credentials(session: AsyncSession, body: SignInDTO) -> User:
     if credentials_valid is False:
         raise INVALID_CREDENTIALS
 
-    user = await user_dal.get_by_filter({User.username.key: body.username})
+    user = await user_dal.get_by_filter({User.username: body.username})
     if user is None:
         raise USER_NOT_FOUND
 
@@ -126,6 +127,7 @@ async def get_users_me(session: AsyncSession, user_jwt: AccessTokenDTO) -> UserR
         second_name=user.second_name,
         email=user.email,
         username=user.username,
+        rating=0,
     )
 
 
@@ -140,16 +142,16 @@ async def update_user(
 
     await user_dal.update(
         {
-            User.id.key: user_jwt.sub,
-            User.first_name.key: body.first_name,
-            User.second_name.key: body.second_name,
-            User.last_name.key: body.last_name,
+            User.id: user_jwt.sub,
+            User.first_name: body.first_name,
+            User.second_name: body.second_name,
+            User.last_name: body.last_name,
         }
     )
 
 
 async def sign_out(response: Response, session: AsyncSession, user_jwt: AccessTokenDTO):
-    await TokenDAL(session).delete(user_jwt.sub)
+    await TokenDAL(session).delete({Token.user_id: user_jwt.sub})
     response.delete_cookie(AUTH_CONFIG.refresh_key)
     response.delete_cookie(AUTH_CONFIG.access_key)
 

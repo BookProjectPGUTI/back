@@ -1,16 +1,19 @@
 from fastapi import APIRouter, status
 
-from src.api.exchange.dto import MakerCreateResponse, MakerResponse
+from src.api.exchange.dto import MakerCreateResponse, MakerResponse, ExchangeResponse
 from src.database.postgres.depends import get_session_depends
 from src.domain.auth.depends import user_depends
 from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES
 from src.domain.book.exception import BOOK_NOT_FOUND
-from src.domain.exchange.service import validate_current_exchange
-from src.domain.maker.exception import MAKER_ALREADY_EXISTS
-from src.domain.maker.service import create_maker, get_makers
+from src.domain.book_genre.exception import BOOK_GENRE_NOT_FOUND
+from src.domain.exchange.exception import EXCHANGE_NOT_FOUND
+from src.domain.exchange.service import validate_user_can_edit_setup, validate_user_complete_setup
+from src.domain.maker.exception import MAKER_ALREADY_EXISTS, MAKER_NOT_FOUND
+from src.domain.maker.service import create_maker, get_makers, get_current_exchange
 from src.domain.taker.exception import TAKER_ALREADY_EXISTS
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED, USER_NOT_NAMED
 from src.domain.user_address.exception import USER_ADDRESS_NOT_FOUND
+from src.domain.wish_list.exception import WISH_LIST_NOT_FOUND
 from src.utils.router_utils import build_description, build_exception_responses
 
 exchanges_router_v1 = APIRouter(
@@ -29,7 +32,8 @@ exchanges_router_v1 = APIRouter(
     ),
     responses=build_exception_responses(
         INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
-        MAKER_ALREADY_EXISTS, TAKER_ALREADY_EXISTS, BOOK_NOT_FOUND, USER_NOT_NAMED, USER_ADDRESS_NOT_FOUND
+        MAKER_ALREADY_EXISTS, TAKER_ALREADY_EXISTS, BOOK_NOT_FOUND, USER_NOT_NAMED, USER_ADDRESS_NOT_FOUND,
+        WISH_LIST_NOT_FOUND, BOOK_GENRE_NOT_FOUND, MAKER_NOT_FOUND
     ),
     response_model=MakerCreateResponse,
 )
@@ -37,7 +41,8 @@ async def create_maker_endpoint(
         user: user_depends,
         session: get_session_depends,
 ) -> MakerCreateResponse:
-    await validate_current_exchange(session, user)
+    await validate_user_can_edit_setup(session, user)
+    await validate_user_complete_setup(session, user)
     return await create_maker(user, session)
 
 
@@ -51,7 +56,8 @@ async def create_maker_endpoint(
     ),
     responses=build_exception_responses(
         INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
-        MAKER_ALREADY_EXISTS, TAKER_ALREADY_EXISTS, BOOK_NOT_FOUND, USER_NOT_NAMED, USER_ADDRESS_NOT_FOUND
+        MAKER_ALREADY_EXISTS, TAKER_ALREADY_EXISTS, BOOK_NOT_FOUND, USER_NOT_NAMED, USER_ADDRESS_NOT_FOUND,
+        WISH_LIST_NOT_FOUND, BOOK_GENRE_NOT_FOUND
     ),
     response_model=MakerResponse,
 )
@@ -59,5 +65,31 @@ async def get_maker_endpoint(
         user: user_depends,
         session: get_session_depends,
 ) -> MakerResponse:
-    await validate_current_exchange(session, user)
+    await validate_user_can_edit_setup(session, user)
+    await validate_user_complete_setup(session, user)
     return await get_makers(user, session)
+
+
+@exchanges_router_v1.get(
+    path='/current',
+    status_code=status.HTTP_200_OK,
+    summary='Текущий обмен',
+    description=build_description(
+        'Позволяет пользователю узнать, участвует ли он в активном обмене, и является ли он мейкером '
+        '(создателем заявки) или тейкером (принявшим заявку). Также возвращает информацию о паре для '
+        'обмена, включая данные пользователей, книги и совпадающие жанры.',
+        {161}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        BOOK_NOT_FOUND, USER_NOT_NAMED, USER_ADDRESS_NOT_FOUND, WISH_LIST_NOT_FOUND, BOOK_GENRE_NOT_FOUND,
+        EXCHANGE_NOT_FOUND,
+    ),
+    response_model=ExchangeResponse,
+)
+async def get_current_exchange_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+) -> ExchangeResponse:
+    await validate_user_complete_setup(session, user)
+    return await get_current_exchange(user, session)

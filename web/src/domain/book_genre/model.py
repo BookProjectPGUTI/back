@@ -16,10 +16,10 @@ class BookGenre(ABCTimestampModel):
         Integer, ForeignKey('genre.id'), primary_key=True, comment='ID жанра'
     )
 
-    genre: Mapped['Genre'] = relationship(
+    genre: Mapped['Genre'] = relationship(  # type: ignore
         back_populates='book_associations', overlaps='books,genres'
     )
 
-    book: Mapped['Book'] = relationship(
+    book: Mapped['Book'] = relationship(  # type: ignore
         back_populates='genre_associations', overlaps='books,genres'
     )

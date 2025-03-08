@@ -47,6 +47,6 @@ class Taker(ABCTimestampModel):
         Boolean, nullable=False, server_default=text('FALSE'), comment='Подтверждение получения книги'
     )
 
-    user: Mapped[_user()] = relationship()
-    book: Mapped[_book()] = relationship()
-    maker: Mapped['Maker'] = relationship(back_populates='taker')
+    user: Mapped[_user()] = relationship()  # type: ignore
+    book: Mapped[_book()] = relationship()  # type: ignore
+    maker: Mapped['Maker'] = relationship(back_populates='taker')  # type: ignore

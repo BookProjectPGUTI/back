@@ -1,13 +1,13 @@
 import re
-from typing import List, Set
+from typing import List, Set, Annotated
 from uuid import UUID
 
-from pydantic import Field, conint, field_validator
+from pydantic import Field, field_validator
 
 from src.domain.abc.dto import ABCResponse, ABCDTO
 from src.domain.author.dto import AuthorCreateDTO, AuthorDTO
 from src.domain.genre.dto import GenreDTO
-from src.utils.constansts import MAX_INT_32
+from src.utils.constansts import INT_32
 from src.utils.time_utils import get_now
 
 
@@ -26,8 +26,8 @@ class BookCreateDTO(ABCDTO):
         pattern=re.compile(r'^(1[0-9]{3}|20[0-9]{2})$'),
         description='Год выпуска книги (от 1000 до 2099)',
     )
-    genres_ids: Set[conint(ge=1, le=MAX_INT_32)] = Field(
-        ..., min_items=1, description='Список ID жанров книги'
+    genres_ids: Annotated[Set[int], INT_32] = Field(
+        ..., min_length=1, description='Список ID жанров книги'
     )
 
     @field_validator('publication_year', mode='after')
@@ -54,7 +54,7 @@ class BookResponse(ABCResponse):
         pattern=re.compile(r'^(1[0-9]{3}|20[0-9]{2})$'),
         description='Год выпуска книги (от 1000 до 2099)',
     )
-    genres: List[GenreDTO] = Field(..., min_items=1, description='Жанры книги')
+    genres: List[GenreDTO] = Field(..., min_length=1, description='Жанры книги')
 
     @field_validator('publication_year', mode='after')
     @classmethod
@@ -80,7 +80,7 @@ class BookMatchDTO(ABCDTO):
         pattern=re.compile(r'^(1[0-9]{3}|20[0-9]{2})$'),
         description='Год выпуска книги (от 1000 до 2099)',
     )
-    genres: List[GenreDTO] = Field(..., min_items=1, description='Жанры книги')
+    genres: List[GenreDTO] = Field(..., min_length=1, description='Жанры книги')
 
     @field_validator('publication_year', mode='after')
     @classmethod
