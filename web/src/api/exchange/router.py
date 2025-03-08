@@ -8,11 +8,12 @@ from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, RE
 from src.domain.book.exception import BOOK_NOT_FOUND
 from src.domain.book_genre.exception import BOOK_GENRE_NOT_FOUND
 from src.domain.exchange.exception import EXCHANGE_NOT_FOUND
-from src.domain.exchange.service import validate_user_can_edit_setup, validate_user_complete_setup
-from src.domain.maker.exception import MAKER_ALREADY_EXISTS, MAKER_NOT_FOUND, MAKER_ALREADY_TAKEN, \
-    MAKER_ALREADY_RECEIVED, MAKER_ALREADY_ACCEPTED
-from src.domain.maker.service import create_maker, get_makers, get_current_exchange
-from src.domain.taker.exception import TAKER_ALREADY_EXISTS
+from src.domain.exchange.service import validate_user_can_edit_setup, validate_user_complete_setup, get_current_exchange
+from src.domain.maker.exception import (
+    MAKER_ALREADY_EXISTS, MAKER_NOT_FOUND, MAKER_ALREADY_TAKEN, MAKER_ALREADY_RECEIVED, MAKER_ALREADY_ACCEPTED
+)
+from src.domain.maker.service import create_maker, get_makers, delete_maker
+from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED
 from src.domain.taker.service import create_taker
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED, USER_NOT_NAMED
 from src.domain.user_address.exception import USER_ADDRESS_NOT_FOUND
@@ -121,3 +122,25 @@ async def create_taker_endpoint(
     await validate_user_can_edit_setup(session, user)
     await validate_user_complete_setup(session, user)
     return await create_taker(session, user, body)
+
+
+@exchanges_router_v1.delete(
+    path='',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Отменить поиск',
+    description=build_description(
+        'Если пользователь передумал искать пару для обмена, он может отменить свою заявку, перестав быть мейкером. '
+        'После этого его заявка удаляется из системы, и другие пользователи больше не видят её в списке доступных '
+        'обменов.',
+        {167}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, MAKER_ALREADY_RECEIVED, TAKER_ALREADY_RECEIVED
+    )
+)
+async def delete_maker_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+):
+    await delete_maker(user, session)
