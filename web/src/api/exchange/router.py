@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status, Body
 
-from src.api.exchange.dto import MakerCreateResponse, MakerResponse, ExchangeResponse, TakerCreateResponse
+from src.api.exchange.dto import MakerCreateResponse, MakerResponse, ExchangeResponse, TakerCreateResponse, \
+    AddTrackNumberBody
 from src.domain.maker.dto import MakerAcceptDTO
 from src.domain.taker.dto import TakerCreateDTO
 from src.database.postgres.depends import get_session_depends
@@ -9,9 +10,11 @@ from src.domain.auth.exception import INVALID_CREDENTIALS, REFRESH_NOT_FOUND, RE
 from src.domain.book.exception import BOOK_NOT_FOUND
 from src.domain.book_genre.exception import BOOK_GENRE_NOT_FOUND
 from src.domain.exchange.exception import EXCHANGE_NOT_FOUND
-from src.domain.exchange.service import validate_user_can_edit_setup, validate_user_complete_setup, get_current_exchange
+from src.domain.exchange.service import validate_user_can_edit_setup, validate_user_complete_setup, \
+    get_current_exchange, add_track_number
 from src.domain.maker.exception import (
-    MAKER_ALREADY_EXISTS, MAKER_NOT_FOUND, MAKER_ALREADY_TAKEN, MAKER_ALREADY_RECEIVED, MAKER_ALREADY_ACCEPTED
+    MAKER_ALREADY_EXISTS, MAKER_NOT_FOUND, MAKER_ALREADY_TAKEN, MAKER_ALREADY_RECEIVED, MAKER_ALREADY_ACCEPTED,
+    MAKER_NOT_ACCEPTED
 )
 from src.domain.maker.service import create_maker, get_makers, delete_maker, accept_maker
 from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED, TAKER_NOT_FOUND
@@ -159,7 +162,8 @@ async def delete_maker_endpoint(
     ),
     responses=build_exception_responses(
         INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
-        MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, TAKER_NOT_FOUND, TAKER_ALREADY_RECEIVED,
+        BOOK_NOT_FOUND, USER_NOT_NAMED, USER_ADDRESS_NOT_FOUND, WISH_LIST_NOT_FOUND, BOOK_GENRE_NOT_FOUND,
+        EXCHANGE_NOT_FOUND, MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, TAKER_NOT_FOUND, TAKER_ALREADY_RECEIVED,
     )
 )
 async def accept_maker_endpoint(
@@ -167,4 +171,29 @@ async def accept_maker_endpoint(
         session: get_session_depends,
         body: MakerAcceptDTO = Body()
 ):
+    await validate_user_complete_setup(session, user)
     await accept_maker(user, session, body)
+
+
+@exchanges_router_v1.put(
+    path='/track-number',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Отправить трек-номер',
+    description=build_description(
+        'Участники обмена отправляют посылку и вводят трек-номер для отслеживания посылки.',
+        {174}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, TAKER_NOT_FOUND, TAKER_ALREADY_RECEIVED, MAKER_NOT_ACCEPTED,
+        MAKER_ALREADY_RECEIVED, EXCHANGE_NOT_FOUND
+    )
+)
+async def add_track_number_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+        body: AddTrackNumberBody = Body(...),
+):
+    await validate_user_complete_setup(session, user)
+    await add_track_number(user, session, body)
+

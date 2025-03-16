@@ -12,6 +12,7 @@ from src.domain.user.dto import UserShareDTO
 class MakerDTO(ABCDTO):
     id: UUID = Field(..., description='ID мейкера')
     is_accepted: bool = Field(..., description='Подтверждение обмена')
+    track_number: str | None = Field(None, max_length=48, description='Трек-номер')
     is_received: bool = Field(..., description='Подтверждение получение')
     user: UserShareDTO = Field(..., description='Пользователь')
     book: BookResponse = Field(..., description='Книга')

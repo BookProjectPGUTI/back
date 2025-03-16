@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 from src.api.book.dto import BookResponse
-from src.domain.abc.dto import ABCResponse
+from src.domain.abc.dto import ABCResponse, ABCDTO
 from src.domain.genre.dto import GenreDTO
 from src.domain.maker.dto import MakerDTO, MakerMatchDTO
 from src.domain.taker.dto import TakerDTO
@@ -31,3 +31,7 @@ class TakerCreateResponse(ABCResponse):
         'Вы определили пару для обмена. Ожидаем подтверждения обмена от Мейкера.',
         description='Описание ответа'
     )
+
+
+class AddTrackNumberBody(ABCDTO):
+    track_number: str = Field(..., max_length=48, description='Трен-номер посылки')
