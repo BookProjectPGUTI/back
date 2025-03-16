@@ -5,10 +5,11 @@ from src.domain.auth.dto import AccessTokenDTO
 from src.domain.book.dal import BookDAL
 from src.domain.book.exception import BOOK_NOT_FOUND
 from src.domain.maker.dal import MakerDAL
+from src.domain.maker.dto import MakerAcceptDTO
 from src.domain.maker.exception import MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, MAKER_ALREADY_RECEIVED
 from src.domain.maker.model import Maker
 from src.domain.taker.dal import TakerDAL
-from src.domain.taker.exception import TAKER_ALREADY_RECEIVED
+from src.domain.taker.exception import TAKER_ALREADY_RECEIVED, TAKER_NOT_FOUND
 from src.domain.taker.model import Taker
 
 
@@ -23,7 +24,7 @@ async def create_maker(
     if book is None:
         raise BOOK_NOT_FOUND
 
-    maker: Maker = await maker_dal.insert(  # type: ignore
+    maker = await maker_dal.insert(
         {
             Maker.user_id: user.sub,
             Maker.book_id: book.id,
@@ -80,3 +81,31 @@ async def delete_maker(
         await taker_dal.delete(id=taker.id)
 
     await maker_dal.delete(id=maker.id)
+
+
+async def accept_maker(
+        user: AccessTokenDTO,
+        session: AsyncSession,
+        body: MakerAcceptDTO,
+):
+    maker_dal = MakerDAL(session)
+    taker_dal = TakerDAL(session)
+
+    maker = await maker_dal.get_by_filter({Maker.user_id: user.sub, Maker.is_received: False})
+    if maker is None:
+        raise MAKER_NOT_FOUND
+    if maker.is_accepted is True:
+        raise MAKER_ALREADY_ACCEPTED
+    if maker.is_received is True:
+        raise MAKER_ALREADY_RECEIVED
+
+    taker = await taker_dal.get_by_filter({Taker.id: maker.id})
+    if taker is None:
+        raise TAKER_NOT_FOUND
+    if taker.is_received is True:
+        raise TAKER_ALREADY_RECEIVED
+
+    if body.is_accepted is True:
+        await maker_dal.update({Maker.id: maker.id, Maker.is_accepted: True})
+    else:
+        await taker_dal.delete({Taker.id: maker.id})

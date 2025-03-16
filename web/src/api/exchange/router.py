@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status, Body
 
 from src.api.exchange.dto import MakerCreateResponse, MakerResponse, ExchangeResponse, TakerCreateResponse
+from src.domain.maker.dto import MakerAcceptDTO
 from src.domain.taker.dto import TakerCreateDTO
 from src.database.postgres.depends import get_session_depends
 from src.domain.auth.depends import user_depends
@@ -12,8 +13,8 @@ from src.domain.exchange.service import validate_user_can_edit_setup, validate_u
 from src.domain.maker.exception import (
     MAKER_ALREADY_EXISTS, MAKER_NOT_FOUND, MAKER_ALREADY_TAKEN, MAKER_ALREADY_RECEIVED, MAKER_ALREADY_ACCEPTED
 )
-from src.domain.maker.service import create_maker, get_makers, delete_maker
-from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED
+from src.domain.maker.service import create_maker, get_makers, delete_maker, accept_maker
+from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED, TAKER_NOT_FOUND
 from src.domain.taker.service import create_taker
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED, USER_NOT_NAMED
 from src.domain.user_address.exception import USER_ADDRESS_NOT_FOUND
@@ -144,3 +145,26 @@ async def delete_maker_endpoint(
         session: get_session_depends,
 ):
     await delete_maker(user, session)
+
+
+@exchanges_router_v1.put(
+    path='/makers/accept',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Принять или отклонить тейкера',
+    description=build_description(
+        'Мейкер подтверждает обмен с тейкером или отклоняет его. '
+        'После подтверждения пользователи не смогут изменять данные обмена, включая адреса доставки, ФИО, информацию '
+        'о книгах и жанрах.',
+        {170}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, TAKER_NOT_FOUND, TAKER_ALREADY_RECEIVED,
+    )
+)
+async def accept_maker_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+        body: MakerAcceptDTO = Body()
+):
+    await accept_maker(user, session, body)

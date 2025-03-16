@@ -7,6 +7,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.domain.abc.model import ABCTimestampModel
 
 
+if typing.TYPE_CHECKING:
+    from src.domain.genre.model import Genre
+    from src.domain.wish_list.model import WishList
+
+
 class User(ABCTimestampModel):
     __tablename__ = 'user'
 
@@ -46,11 +51,11 @@ class User(ABCTimestampModel):
         Boolean, nullable=False, server_default=text('TRUE'), comment='Заблокирован ли пользователь'
     )
 
-    genres: Mapped[typing.List['Genre']] = relationship(  # type: ignore
+    genres: Mapped[typing.List['Genre']] = relationship(
         secondary='wish_list', back_populates='users'
     )
 
-    genre_associations: Mapped[typing.List['WishList']] = relationship(  # type: ignore
+    genre_associations: Mapped[typing.List['WishList']] = relationship(
         back_populates='user', overlaps='users,genres'
     )
 

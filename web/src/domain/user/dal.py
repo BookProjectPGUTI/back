@@ -8,7 +8,7 @@ from src.domain.user.model import User
 
 
 class UserDAL(ABCDAL[User]):
-    async def insert(self, data: Dict[str, Any]) -> UUID:  # type: ignore # noqa
+    async def create(self, data: Dict[str, Any]) -> UUID:
         stmt = text(
             f"""
 INSERT INTO "{self.model.__tablename__}" (

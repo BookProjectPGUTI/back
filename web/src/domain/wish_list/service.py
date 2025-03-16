@@ -21,7 +21,7 @@ async def create_wish_list(
     wish_list_dal = WishListDAL(session)
 
     await wish_list_dal.delete_by_book(user_jwt.sub)
-    await wish_list_dal.insert(
+    await wish_list_dal.insert_many(
         [
             {
                 WishList.user_id: user_jwt.sub,

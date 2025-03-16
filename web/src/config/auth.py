@@ -15,7 +15,8 @@ class AuthConfig(BaseSettings):
     access_key: str = 'access'
     access_exp_sec: int = 60 * 60 * 24 * 2
 
-    def cookies_kwargs(self) -> Dict[str, Any]:
+    @staticmethod
+    def cookies_kwargs() -> Dict[str, Any]:
         kwargs = {
             'samesite': 'Strict',
             'secure': False,

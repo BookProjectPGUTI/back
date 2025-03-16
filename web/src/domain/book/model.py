@@ -10,6 +10,8 @@ from src.domain.abc.model import ABCTimestampModel
 if typing.TYPE_CHECKING:
     from src.domain.author.model import Author
     from src.domain.user.model import User
+    from src.domain.genre.model import Genre
+    from src.domain.book_genre.model import BookGenre
 
 
 def _user():
@@ -51,14 +53,14 @@ class Book(ABCTimestampModel):
         VARCHAR(4), nullable=False, comment='Год публикации книги'
     )
 
-    user: Mapped[_user()] = relationship()  # type: ignore
+    user: Mapped['User'] = relationship()
 
-    author: Mapped[_author()] = relationship()  # type: ignore
+    author: Mapped['Author'] = relationship()
 
-    genres: Mapped[typing.List['Genre']] = relationship(  # type: ignore
+    genres: Mapped[typing.List['Genre']] = relationship(
         secondary='book_genre', back_populates='books'
     )
 
-    genre_associations: Mapped[typing.List['BookGenre']] = relationship(  # type: ignore
+    genre_associations: Mapped[typing.List['BookGenre']] = relationship(
         back_populates='book', overlaps='books,genres'
     )

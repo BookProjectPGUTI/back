@@ -29,10 +29,10 @@ class MakerDAL(ABCDAL[Maker]):
             return func.array_agg(
                 field
             ).filter(
-                GenreAlias.id.in_(genre_query)
+                genre_alias.id.in_(genre_query)
             )
 
-        GenreAlias = aliased(Genre)
+        genre_alias = aliased(Genre)
 
         maker_genre_subquery = select(
             BookGenre.genre_id
@@ -40,8 +40,8 @@ class MakerDAL(ABCDAL[Maker]):
             BookGenre.book_id == self.model.book_id
         ).scalar_subquery()
 
-        book_genre_ids_subquery = _build_array_query(GenreAlias.id, maker_genre_subquery)
-        book_genre_names_subquery = _build_array_query(GenreAlias.name, maker_genre_subquery)
+        book_genre_ids_subquery = _build_array_query(genre_alias.id, maker_genre_subquery)
+        book_genre_names_subquery = _build_array_query(genre_alias.name, maker_genre_subquery)
 
         taker_matches_subquery = select(
             WishList.genre_id
@@ -50,13 +50,13 @@ class MakerDAL(ABCDAL[Maker]):
         ).scalar_subquery()
 
         taker_match_count_subquery = func.count(
-            GenreAlias.id
+            genre_alias.id
         ).filter(
-            GenreAlias.id.in_(taker_matches_subquery)
+            genre_alias.id.in_(taker_matches_subquery)
         )
 
-        taker_matched_ids_subquery = _build_array_query(GenreAlias.id, taker_matches_subquery)
-        taker_matched_names_subquery = _build_array_query(GenreAlias.name, taker_matches_subquery)
+        taker_matched_ids_subquery = _build_array_query(genre_alias.id, taker_matches_subquery)
+        taker_matched_names_subquery = _build_array_query(genre_alias.name, taker_matches_subquery)
 
         maker_matches_subquery = select(
             WishList.genre_id
@@ -65,13 +65,13 @@ class MakerDAL(ABCDAL[Maker]):
         ).scalar_subquery()
 
         maker_match_count_subquery = func.count(
-            GenreAlias.id
+            genre_alias.id
         ).filter(
-            GenreAlias.id.in_(maker_matches_subquery)
+            genre_alias.id.in_(maker_matches_subquery)
         )
 
-        maker_matched_ids_subquery = _build_array_query(GenreAlias.id, maker_matches_subquery)
-        maker_matched_names_subquery = _build_array_query(GenreAlias.name, maker_matches_subquery)
+        maker_matched_ids_subquery = _build_array_query(genre_alias.id, maker_matches_subquery)
+        maker_matched_names_subquery = _build_array_query(genre_alias.name, maker_matches_subquery)
 
         query = select(
             self.model,
@@ -94,7 +94,7 @@ class MakerDAL(ABCDAL[Maker]):
             User,
             self.model.user
         ).join(
-            GenreAlias,
+            genre_alias,
             Book.genres
         ).outerjoin(
             Taker,
@@ -145,135 +145,110 @@ class MakerDAL(ABCDAL[Maker]):
         ]
 
     async def get_current_maker(self, user_id: UUID) -> ExchangeResponse | None:
-        def _build_array_query(
-                field: InstrumentedAttribute,
-                genre_query: ScalarSelect
-        ) -> FunctionFilter:
-            return func.array_agg(
-                field
-            ).filter(
-                GenreAlias.id.in_(genre_query)
-            )
-
-        GenreAlias = aliased(Genre)
-
-        maker_genre_subquery = select(
-            BookGenre.genre_id
-        ).where(
-            BookGenre.book_id == self.model.book_id
-        ).scalar_subquery()
-
-        book_genre_ids_subquery = _build_array_query(GenreAlias.id, maker_genre_subquery)
-        book_genre_names_subquery = _build_array_query(GenreAlias.name, maker_genre_subquery)
+        genre_alias = aliased(Genre)
+        book_genre_alias = aliased(BookGenre)
+        taker_book_genre_alias = aliased(BookGenre)
+        taker_genre_alias = aliased(Genre)
+        taker_book_alias = aliased(Book)
+        taker_author_alias = aliased(Author)
+        taker_user_alias = aliased(User)
 
         taker_matches_subquery = select(
-            WishList.genre_id
-        ).where(
-            WishList.user_id == user_id
-        ).scalar_subquery()
-
-        taker_match_count_subquery = func.count(
-            GenreAlias.id
-        ).filter(
-            GenreAlias.id.in_(taker_matches_subquery)
-        )
-
-        taker_matched_ids_subquery = _build_array_query(GenreAlias.id, taker_matches_subquery)
-        taker_matched_names_subquery = _build_array_query(GenreAlias.name, taker_matches_subquery)
+            WishList.user_id,
+            func.array_agg(WishList.genre_id).label('taker_matched_ids'),
+            func.array_agg(genre_alias.name).label('taker_matched_names')
+        ).join(
+            genre_alias, genre_alias.id == WishList.genre_id
+        ).group_by(
+            WishList.user_id
+        ).subquery()
 
         maker_matches_subquery = select(
-            WishList.genre_id
+            WishList.user_id,
+            func.array_agg(WishList.genre_id).label('maker_matched_ids'),
+            func.array_agg(genre_alias.name).label('maker_matched_names')
+        ).join(
+            genre_alias, genre_alias.id == WishList.genre_id
+        ).group_by(
+            WishList.user_id
+        ).subquery()
+
+        book_genre_subquery = select(
+            book_genre_alias.book_id,
+            func.array_agg(genre_alias.id).label('book_genre_ids'),
+            func.array_agg(genre_alias.name).label('book_genre_names')
+        ).join(
+            genre_alias, genre_alias.id == book_genre_alias.genre_id
+        ).group_by(
+            book_genre_alias.book_id
+        ).subquery()
+
+        taker_book_genre_subquery = select(
+            taker_book_genre_alias.book_id,
+            func.array_agg(taker_genre_alias.id).label('taker_book_genre_ids'),
+            func.array_agg(taker_genre_alias.name).label('taker_book_genre_names')
+        ).join(
+            taker_genre_alias, taker_genre_alias.id == taker_book_genre_alias.genre_id
+        ).group_by(
+            taker_book_genre_alias.book_id
+        ).subquery()
+
+        taker_match_count_subquery = select(
+            func.count(WishList.genre_id).label('taker_match_count')
+        ).where(
+            WishList.user_id == Taker.user_id
+        ).correlate(Taker).scalar_subquery()
+
+        maker_match_count_subquery = select(
+            func.count(WishList.genre_id).label('maker_match_count')
         ).where(
             WishList.user_id == self.model.user_id
-        ).scalar_subquery()
-
-        maker_match_count_subquery = func.count(
-            GenreAlias.id
-        ).filter(
-            GenreAlias.id.in_(maker_matches_subquery)
-        )
-
-        maker_matched_ids_subquery = _build_array_query(GenreAlias.id, maker_matches_subquery)
-        maker_matched_names_subquery = _build_array_query(GenreAlias.name, maker_matches_subquery)
-
-        TakerBook = aliased(Book)
-        TakerUser = aliased(User)
-        TakerAuthor = aliased(Author)
-        TakerGenre = aliased(Genre)
-        TakerBookGenre = aliased(BookGenre)
-
-        taker_genre_subquery = select(
-            TakerBookGenre.genre_id
-        ).where(
-            TakerBookGenre.book_id == self.model.book_id
-        ).scalar_subquery()
-
-        taker_book_genre_ids_subquery = _build_array_query(TakerGenre.id, taker_genre_subquery)
-        taker_book_genre_names_subquery = _build_array_query(TakerGenre.name, taker_genre_subquery)
+        ).correlate(self.model).scalar_subquery()
 
         query = select(
             self.model,
             Book,
             Author,
             User,
-
             Taker,
-            TakerBook,
-            TakerAuthor,
-            TakerUser,
-
-            book_genre_ids_subquery.label('book_genre_ids'),
-            book_genre_names_subquery.label('book_genre_names'),
-
-            taker_matched_ids_subquery.label('taker_matched_ids'),
-            taker_matched_names_subquery.label('taker_matched_names'),
-
-            maker_matched_ids_subquery.label('maker_matched_ids'),
-            maker_matched_names_subquery.label('maker_matched_names'),
-
-            taker_book_genre_ids_subquery.label('taker_book_genre_ids'),
-            taker_book_genre_names_subquery.label('taker_book_genre_names'),
+            taker_book_alias,
+            taker_author_alias,
+            taker_user_alias,
+            book_genre_subquery.c.book_genre_ids,
+            book_genre_subquery.c.book_genre_names,
+            taker_matches_subquery.c.taker_matched_ids,
+            taker_matches_subquery.c.taker_matched_names,
+            maker_matches_subquery.c.maker_matched_ids,
+            maker_matches_subquery.c.maker_matched_names,
+            taker_book_genre_subquery.c.taker_book_genre_ids,
+            taker_book_genre_subquery.c.taker_book_genre_names
         ).join(
-            Book,
-            Book.id == self.model.book_id
+            Book, Book.id == self.model.book_id
         ).join(
-            Author,
-            Book.author
+            Author, Book.author_id == Author.id
         ).join(
-            User,
-            self.model.user
-        ).join(
-            GenreAlias,
-            Book.genres
+            User, self.model.user_id == User.id
         ).outerjoin(
-            Taker,
-            self.model.taker
+            Taker, self.model.id == Taker.id
         ).outerjoin(
-            TakerBook,
-            TakerBook.id == Taker.book_id
+            taker_book_alias, Taker.book_id == taker_book_alias.id
         ).outerjoin(
-            TakerAuthor,
-            TakerAuthor.id == TakerBook.author_id
+            taker_author_alias, taker_book_alias.author_id == taker_author_alias.id
         ).outerjoin(
-            TakerUser,
-            TakerUser.id == Taker.user_id
+            taker_user_alias, Taker.user_id == taker_user_alias.id
         ).outerjoin(
-            TakerGenre,
-            TakerBook.genres
+            book_genre_subquery, book_genre_subquery.c.book_id == Book.id
+        ).outerjoin(
+            taker_matches_subquery, taker_matches_subquery.c.user_id == Taker.user_id
+        ).outerjoin(
+            maker_matches_subquery, maker_matches_subquery.c.user_id == self.model.user_id
+        ).outerjoin(
+            taker_book_genre_subquery, taker_book_genre_subquery.c.book_id == Taker.book_id
         ).where(
             or_(
                 self.model.user_id == user_id,
                 Taker.user_id == user_id,
             )
-        ).group_by(
-            self.model.id,
-            Book.id,
-            Author.id,
-            User.id,
-            Taker.id,
-            TakerBook.id,
-            TakerAuthor.id,
-            TakerUser.id,
         ).order_by(
             taker_match_count_subquery.desc(),
             maker_match_count_subquery.desc(),
@@ -288,21 +263,16 @@ class MakerDAL(ABCDAL[Maker]):
             book,
             author,
             user,
-
             taker,
             taker_book,
             taker_author,
             taker_user,
-
             book_genre_ids,
             book_genre_names,
-
             taker_matched_ids,
             taker_matched_names,
-
             maker_matched_ids,
             maker_matched_names,
-
             taker_book_genre_ids,
             taker_book_genre_names,
         ) = result

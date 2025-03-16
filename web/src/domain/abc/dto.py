@@ -16,7 +16,7 @@ class ABCResponse(ABCDTO):
 
 class PaginationDTO(ABCDTO):
     page: int = Field(1, ge=1, description='Номер текущей страницы')
-    page_size: int = Field(10, ge=1, le=100, description='Количесalembic.iniтво элементов на страницу')
+    page_size: int = Field(10, ge=1, le=100, description='Количество элементов на страницу')
 
 
 class PaginationInfoDTO(ABCDTO):

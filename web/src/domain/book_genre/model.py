@@ -1,9 +1,15 @@
 import uuid
+import typing
 
 from sqlalchemy import UUID, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.domain.abc.model import ABCTimestampModel
+
+
+if typing.TYPE_CHECKING:
+    from src.domain.genre.model import Genre
+    from src.domain.book.model import Book
 
 
 class BookGenre(ABCTimestampModel):
@@ -16,10 +22,10 @@ class BookGenre(ABCTimestampModel):
         Integer, ForeignKey('genre.id'), primary_key=True, comment='ID жанра'
     )
 
-    genre: Mapped['Genre'] = relationship(  # type: ignore
+    genre: Mapped['Genre'] = relationship(
         back_populates='book_associations', overlaps='books,genres'
     )
 
-    book: Mapped['Book'] = relationship(  # type: ignore
+    book: Mapped['Book'] = relationship(
         back_populates='genre_associations', overlaps='books,genres'
     )

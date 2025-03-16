@@ -10,7 +10,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from alembic_utils.pg_extension import PGExtension
-from sqlalchemy import text as sql_text
+from sqlalchemy import text as sql_text  # noqa
 
 # revision identifiers, used by Alembic.
 revision: str = '29332d846efb'

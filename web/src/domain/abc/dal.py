@@ -86,16 +86,11 @@ class ABCDAL(Generic[ModelType]):
 
     async def insert(
             self,
-            data: _DATA_TYPE,
+            data: _DATA_ITEM_TYPE,
             return_value: bool = False
-    ) -> ModelType | Sequence[ModelType] | None:
-        if isinstance(data, dict):
-            self._validate_fields_exists(data)
-            data_list: list[dict] = [data]
-        else:
-            for item in data:
-                self._validate_fields_exists(item)
-            data_list = data
+    ) -> ModelType | None:
+        self._validate_fields_exists(data)
+        data_list: list[dict] = [data]
 
         if len(data_list) <= 0:
             return None
@@ -111,15 +106,43 @@ class ABCDAL(Generic[ModelType]):
             )
 
             result = await self.session.scalars(query, params)
-            items = result.all()
-            if len(items) == 1:
-                return items[0]
-            else:
-                return items
+            return result.one()
         else:
-            query = insert(  # type: ignore
+            query = insert(
                 self.model
+            ).returning()
+
+            await self.session.execute(query, params)
+            return None
+
+    async def insert_many(
+            self,
+            data: _DATA_LIST_TYPE,
+            return_value: bool = False
+    ) -> Sequence[ModelType] | None:
+        for item in data:
+            self._validate_fields_exists(item)
+
+        if len(data) <= 0:
+            return None
+
+        params = self._build_params_from_data(data)
+
+        if return_value:
+            query = insert(
+                self.model
+            ).returning(
+                self.model,
+                sort_by_parameter_order=True
             )
+
+            result = await self.session.scalars(query, params)
+            items = result.all()
+            return items
+        else:
+            query = insert(
+                self.model
+            ).returning()
 
             await self.session.execute(query, params)
             return None
