@@ -30,7 +30,7 @@ class BookCreateDTO(ABCDTO):
         ..., min_length=1, description='Список ID жанров книги'
     )
 
-    @field_validator('publication_year', mode='after')
+    @field_validator('publication_year', mode='after')  # noqa
     @classmethod
     def publication_year_validator(cls, v: str) -> str:
         if int(v) > get_now().year:
@@ -56,7 +56,7 @@ class BookResponse(ABCResponse):
     )
     genres: List[GenreDTO] = Field(..., min_length=1, description='Жанры книги')
 
-    @field_validator('publication_year', mode='after')
+    @field_validator('publication_year', mode='after')  # noqa
     @classmethod
     def publication_year_validator(cls, v: str) -> str:
         if int(v) > get_now().year:
@@ -82,7 +82,7 @@ class BookMatchDTO(ABCDTO):
     )
     genres: List[GenreDTO] = Field(..., min_length=1, description='Жанры книги')
 
-    @field_validator('publication_year', mode='after')
+    @field_validator('publication_year', mode='after')  # noqa
     @classmethod
     def publication_year_validator(cls, v: str) -> str:
         if int(v) > get_now().year:

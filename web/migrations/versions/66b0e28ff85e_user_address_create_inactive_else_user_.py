@@ -8,11 +8,11 @@ Create Date: 2025-03-01 22:42:39.993341
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
+import sqlalchemy as sa  # noqa
 from alembic_utils.pg_function import PGFunction
-from sqlalchemy import text as sql_text
+from sqlalchemy import text as sql_text  # noqa
 from alembic_utils.pg_trigger import PGTrigger
-from sqlalchemy import text as sql_text
+from sqlalchemy import text as sql_text  # noqa
 
 # revision identifiers, used by Alembic.
 revision: str = '66b0e28ff85e'

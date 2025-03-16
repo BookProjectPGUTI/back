@@ -1,6 +1,6 @@
 import re
 
-from pydantic import Field, EmailStr
+from pydantic import Field
 
 from src.domain.abc.dto import ABCDTO
 

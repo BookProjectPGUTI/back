@@ -103,7 +103,7 @@ async def sign_in_endpoint(
     )
 )
 async def refresh_endpoint(
-        user: AccessTokenDTO = Depends(UserFilter(is_make_refresh=True))
+        user: AccessTokenDTO = Depends(UserFilter(is_make_refresh=True))  # noqa
 ):
     return
 

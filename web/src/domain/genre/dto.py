@@ -3,7 +3,7 @@ from typing import List, Self, Annotated
 from pydantic import Field
 
 from src.domain.abc.dto import ABCDTO
-from src.utils.constansts import MAX_INT_32, INT_32
+from src.utils.constansts import INT_32
 
 
 class GenreDTO(ABCDTO):

@@ -30,7 +30,7 @@ async def sign_up(session: AsyncSession, body: SignUpDTO) -> SignUpResponse:
     if username_exists is True:
         raise USERNAME_ALREADY_EXISTS
 
-    user_id = await UserDAL(session).insert(body.model_dump())
+    user_id = await UserDAL(session).create(body.model_dump())
 
     html = build_sign_up_mail(user_id)
 

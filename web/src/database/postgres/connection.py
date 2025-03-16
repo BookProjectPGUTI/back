@@ -42,7 +42,8 @@ def session_decorator(fn: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]
         session = async_session_maker()
         try:
             async with session.begin():
-                result = await fn(*args, session=session, **kwargs)  # type: ignore
+                kwargs['session'] = session
+                result = await fn(*args, **kwargs)
             await session.commit()
             return result
         except Exception as e:

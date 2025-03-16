@@ -58,7 +58,7 @@ class UserAddress(ABCTimestampModel):
         Boolean, nullable=False, comment='Активность адреса'
     )
 
-    user: Mapped[_user()] = relationship()  # type: ignore
+    user: Mapped['User'] = relationship()
 
 
 inactive_else_user_address_function = PGFunction(

@@ -28,7 +28,7 @@ genres_router_v1 = APIRouter(
     response_model=GenreResponse,
 )
 async def get_genres_endpoint(
-        user: user_depends,
+        user: user_depends,  # noqa
         session: get_session_depends,
 ) -> GenreResponse:
     return await get_genres(session)

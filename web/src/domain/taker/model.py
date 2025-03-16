@@ -10,6 +10,7 @@ from src.domain.abc.model import ABCTimestampModel
 if typing.TYPE_CHECKING:
     from src.domain.user.model import User
     from src.domain.book.model import Book
+    from src.domain.maker.model import Maker
 
 
 def _user():
@@ -47,6 +48,6 @@ class Taker(ABCTimestampModel):
         Boolean, nullable=False, server_default=text('FALSE'), comment='Подтверждение получения книги'
     )
 
-    user: Mapped[_user()] = relationship()  # type: ignore
-    book: Mapped[_book()] = relationship()  # type: ignore
-    maker: Mapped['Maker'] = relationship(back_populates='taker')  # type: ignore
+    user: Mapped['User'] = relationship()
+    book: Mapped['Book'] = relationship()
+    maker: Mapped['Maker'] = relationship(back_populates='taker')

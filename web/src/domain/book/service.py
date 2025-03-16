@@ -20,7 +20,8 @@ async def create_book(
 
     author = await author_dal.get_by_filter(body.author.model_dump())
     if author is None:
-        author = await author_dal.insert(body.author.model_dump(), return_value=True)  # type: ignore
+        author = await author_dal.insert(body.author.model_dump(), return_value=True)
+
     if author is None:
         raise AUTHOR_NOT_FOUND
 
@@ -30,11 +31,11 @@ async def create_book(
 
     book_dal = BookDAL(session)
 
-    book = await book_dal.get_current_book(user_jwt.sub)
-    if book is not None:
+    existing_book = await book_dal.get_current_book(user_jwt.sub)
+    if existing_book is not None:
         raise BOOK_ALREADY_EXISTS
 
-    book = await BookDAL(session).insert(  # type: ignore
+    book = await BookDAL(session).insert(
         {
             Book.user_id: user_jwt.sub,
             Book.author_id: author.id,
@@ -44,10 +45,11 @@ async def create_book(
         },
         return_value=True
     )
+
     if book is None:
         raise BOOK_NOT_FOUND
 
-    await BookGenreDAL(session).insert(
+    await BookGenreDAL(session).insert_many(
         [
             {
                 BookGenre.book_id: book.id,
@@ -86,13 +88,13 @@ async def update_book(session: AsyncSession, user_jwt: AccessTokenDTO, body: Boo
 
     author = await author_dal.get_by_filter(body.author.model_dump())
     if author is None:
-        author = await author_dal.insert(body.author.model_dump(), return_value=True)  # type: ignore
+        author = await author_dal.insert(body.author.model_dump(), return_value=True)
     if author is None:
         raise AUTHOR_NOT_FOUND
 
     book_genre_dal = BookGenreDAL(session)
     await book_genre_dal.delete_by_book(book.id)
-    await book_genre_dal.insert(
+    await book_genre_dal.insert_many(
         [
             {
                 BookGenre.book_id: book.id,

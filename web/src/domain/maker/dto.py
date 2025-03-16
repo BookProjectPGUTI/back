@@ -23,3 +23,7 @@ class MakerMatchDTO(ABCDTO):
     book: BookResponse = Field(..., description='Книга')
     taker_genre_matches: List[GenreDTO] = Field(..., description='Совпавшие жанры книги у тейкера')
     maker_genre_matches: List[GenreDTO] = Field(..., description='Совпавшие жанры книги у мейкера')
+
+
+class MakerAcceptDTO(ABCDTO):
+    is_accepted: bool = Field(description='Подтверждение обмена мейкером')

@@ -1,6 +1,6 @@
-from tests.fixture.connection import session
-from tests.fixture.migration import migration
-from src.database.postgres.models import *
+from tests.fixture.connection import session  # noqa
+from tests.fixture.migration import migration  # noqa
+from src.database.postgres.models import *  # noqa
 
 _all__ = (
     'migration',
