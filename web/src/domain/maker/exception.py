@@ -24,3 +24,8 @@ MAKER_ALREADY_RECEIVED = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
     detail='Мейкер уже подтвердил получение.'
 )
+
+MAKER_NOT_ACCEPTED = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail='Мейкер ещё не подтвердил обмен'
+)

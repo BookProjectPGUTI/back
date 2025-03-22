@@ -280,6 +280,7 @@ class MakerDAL(ABCDAL[Maker]):
         if taker is not None:
             taker_dto = TakerDTO(
                 id=taker.id,
+                track_number=taker.track_number,
                 is_received=taker.is_received,
                 user=taker_user,
                 book=BookResponse(
@@ -298,6 +299,7 @@ class MakerDAL(ABCDAL[Maker]):
             maker=MakerDTO(
                 id=maker.id,
                 is_accepted=maker.is_accepted,
+                track_number=maker.track_number,
                 is_received=maker.is_received,
                 user=user,
                 book=BookResponse(
