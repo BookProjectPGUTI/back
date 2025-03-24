@@ -4,6 +4,8 @@ from src.api.exchange.dto import MakerCreateResponse, MakerResponse
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.book.dal import BookDAL
 from src.domain.book.exception import BOOK_NOT_FOUND
+from src.domain.book_genre.dal import BookGenreDAL
+from src.domain.book_genre.model import BookGenre
 from src.domain.maker.dal import MakerDAL
 from src.domain.maker.dto import MakerAcceptDTO
 from src.domain.maker.exception import MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, MAKER_ALREADY_RECEIVED
@@ -45,8 +47,19 @@ async def get_makers(
         session: AsyncSession
 ) -> MakerResponse:
     maker_dal = MakerDAL(session)
+    book_dal = BookDAL(session)
+    book_genre_dal = BookGenreDAL(session)
 
-    makers = await maker_dal.get_matched_makers(user.sub)
+    book = await book_dal.get_current_book(user.sub)
+    if book is None:
+        raise BOOK_NOT_FOUND
+
+    book_genres = await book_genre_dal.get_many_by_filter({BookGenre.book_id: book.id})
+    taker_genres_ids = {
+        book_genre.genre_id
+        for book_genre in book_genres
+    }
+    makers = await maker_dal.get_matched_makers(user.sub, taker_genres_ids)
 
     return MakerResponse(
         makers=makers

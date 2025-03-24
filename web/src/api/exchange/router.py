@@ -11,13 +11,14 @@ from src.domain.book.exception import BOOK_NOT_FOUND
 from src.domain.book_genre.exception import BOOK_GENRE_NOT_FOUND
 from src.domain.exchange.exception import EXCHANGE_NOT_FOUND
 from src.domain.exchange.service import validate_user_can_edit_setup, validate_user_complete_setup, \
-    get_current_exchange, add_track_number
+    get_current_exchange, add_track_number, add_received
 from src.domain.maker.exception import (
     MAKER_ALREADY_EXISTS, MAKER_NOT_FOUND, MAKER_ALREADY_TAKEN, MAKER_ALREADY_RECEIVED, MAKER_ALREADY_ACCEPTED,
-    MAKER_NOT_ACCEPTED
+    MAKER_NOT_ACCEPTED, MAKER_WITHOUT_TRACK_NUMBER
 )
 from src.domain.maker.service import create_maker, get_makers, delete_maker, accept_maker
-from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED, TAKER_NOT_FOUND
+from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED, TAKER_NOT_FOUND, \
+    TAKER_WITHOUT_TRACK_NUMBER
 from src.domain.taker.service import create_taker
 from src.domain.user.exception import USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED, USER_NOT_NAMED
 from src.domain.user_address.exception import USER_ADDRESS_NOT_FOUND
@@ -197,3 +198,24 @@ async def add_track_number_endpoint(
     await validate_user_complete_setup(session, user)
     await add_track_number(user, session, body)
 
+
+@exchanges_router_v1.put(
+    path='/received',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Подтверждение получения посылки',
+    description=build_description(
+        'Участники обмена подтверждают получение посылки.',
+        {176}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+        MAKER_NOT_FOUND, MAKER_ALREADY_ACCEPTED, TAKER_NOT_FOUND, TAKER_ALREADY_RECEIVED, MAKER_NOT_ACCEPTED,
+        MAKER_ALREADY_RECEIVED, EXCHANGE_NOT_FOUND, MAKER_WITHOUT_TRACK_NUMBER, TAKER_WITHOUT_TRACK_NUMBER
+    )
+)
+async def add_received_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+):
+    await validate_user_complete_setup(session, user)
+    await add_received(user, session)
