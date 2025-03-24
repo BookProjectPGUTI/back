@@ -14,3 +14,8 @@ TAKER_NOT_FOUND = HTTPException(
     status_code=status.HTTP_404_NOT_FOUND,
     detail='Тейкер не найден.'
 )
+
+TAKER_WITHOUT_TRACK_NUMBER = HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND,
+    detail='Тейкер не найден.'
+)

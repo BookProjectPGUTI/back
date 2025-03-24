@@ -29,3 +29,8 @@ MAKER_NOT_ACCEPTED = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail='Мейкер ещё не подтвердил обмен'
 )
+
+MAKER_WITHOUT_TRACK_NUMBER = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail='Мейкер ещё не ввел трек-номер'
+)

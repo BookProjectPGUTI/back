@@ -14,10 +14,11 @@ from src.domain.maker.exception import (
     MAKER_NOT_ACCEPTED,
     MAKER_ALREADY_RECEIVED,
     MAKER_NOT_FOUND,
+    MAKER_WITHOUT_TRACK_NUMBER,
 )
 from src.domain.maker.model import Maker
 from src.domain.taker.dal import TakerDAL
-from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED
+from src.domain.taker.exception import TAKER_ALREADY_EXISTS, TAKER_ALREADY_RECEIVED, TAKER_WITHOUT_TRACK_NUMBER
 from src.domain.taker.model import Taker
 from src.domain.user.dal import UserDAL
 from src.domain.user.exception import USER_NOT_FOUND, USER_NOT_NAMED
@@ -158,5 +159,59 @@ async def add_track_number(
             {
                 Taker.id: taker.id,
                 Taker.track_number: body.track_number
+            }
+        )
+
+
+async def add_received(
+        user: AccessTokenDTO,
+        session: AsyncSession,
+):
+    maker_dal = MakerDAL(session)
+    taker_dal = TakerDAL(session)
+
+    maker = await maker_dal.get_by_filter({Maker.user_id: user.sub, Maker.is_received: False})
+    if maker is not None:
+        if maker.is_accepted is False:
+            raise MAKER_NOT_ACCEPTED
+        if maker.is_received is True:
+            raise MAKER_ALREADY_RECEIVED
+        if maker.track_number is None:
+            raise MAKER_WITHOUT_TRACK_NUMBER
+
+        taker = await taker_dal.get_by_filter({Taker.id: maker.id})
+        if taker is None:
+            raise EXCHANGE_NOT_FOUND
+        if taker.track_number is None:
+            raise TAKER_WITHOUT_TRACK_NUMBER
+
+        await maker_dal.update(
+            {
+                Maker.id: maker.id,
+                Maker.is_received: True
+            }
+        )
+
+    else:
+        taker = await taker_dal.get_by_filter({Taker.user_id: user.sub, Taker.is_received: False})
+        if taker is None:
+            raise EXCHANGE_NOT_FOUND
+        if taker.is_received is True:
+            raise TAKER_ALREADY_RECEIVED
+        if taker.track_number is None:
+            raise TAKER_WITHOUT_TRACK_NUMBER
+
+        maker = await maker_dal.get_by_filter({Maker.id: taker.id})
+        if maker is None:
+            raise MAKER_NOT_FOUND
+        if maker.is_accepted is False:
+            raise MAKER_NOT_ACCEPTED
+        if maker.track_number is None:
+            raise MAKER_WITHOUT_TRACK_NUMBER
+
+        await taker_dal.update(
+            {
+                Taker.id: taker.id,
+                Taker.is_received: True
             }
         )
