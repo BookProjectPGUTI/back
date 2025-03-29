@@ -80,20 +80,30 @@ async def delete_maker(
         }
     )
     if maker is None:
-        raise MAKER_NOT_FOUND
-    if maker.is_accepted is True:
-        raise MAKER_ALREADY_ACCEPTED
-    if maker.is_received is True:
-        raise MAKER_ALREADY_RECEIVED
-
-    taker = await taker_dal.get_by_filter({Taker.id: maker.id})
-    if taker is not None:
-        if taker.is_received is True:
-            raise TAKER_ALREADY_RECEIVED
+        taker = await taker_dal.get_by_filter(
+            {
+                Taker.user_id: user.sub,
+                Taker.is_received: False,
+            }
+        )
+        if taker is None:
+            raise TAKER_NOT_FOUND
 
         await taker_dal.delete(id=taker.id)
+    else:
+        if maker.is_accepted is True:
+            raise MAKER_ALREADY_ACCEPTED
+        if maker.is_received is True:
+            raise MAKER_ALREADY_RECEIVED
 
-    await maker_dal.delete(id=maker.id)
+        taker = await taker_dal.get_by_filter({Taker.id: maker.id})
+        if taker is not None:
+            if taker.is_received is True:
+                raise TAKER_ALREADY_RECEIVED
+
+            await taker_dal.delete(id=taker.id)
+
+        await maker_dal.delete(id=maker.id)
 
 
 async def accept_maker(
