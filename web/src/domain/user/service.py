@@ -12,6 +12,7 @@ from src.config.mail import MAIL_CONFIG
 from src.config.web import WEB_CONFIG
 from src.domain.auth.dto import AccessTokenDTO
 from src.domain.mail.sign_up import build_sign_up_mail
+from src.domain.taker.dal import TakerDAL
 from src.domain.token.dal import TokenDAL
 from src.domain.token.model import Token
 from src.domain.user.dal import UserDAL
@@ -120,6 +121,8 @@ async def get_users_me(session: AsyncSession, user_jwt: AccessTokenDTO) -> UserR
     if user is None:
         raise USER_NOT_FOUND
 
+    rating = await TakerDAL(session).get_success_exchanges_count(user_jwt.sub)
+
     return UserResponse(
         id=user_jwt.sub,
         first_name=user.first_name,
@@ -127,8 +130,27 @@ async def get_users_me(session: AsyncSession, user_jwt: AccessTokenDTO) -> UserR
         second_name=user.second_name,
         email=user.email,
         username=user.username,
-        rating=0,
+        rating=rating,
     )
+
+
+async def get_user_by_id(session: AsyncSession, user_id: UUID) -> UserResponse:
+    user = await UserDAL(session).get_by_filter(id=user_id)
+    if user is None:
+        raise USER_NOT_FOUND
+
+    rating = await TakerDAL(session).get_success_exchanges_count(user_id)
+
+    return UserResponse(
+        id=user.id,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        second_name=user.second_name,
+        email=user.email,
+        username=user.username,
+        rating=rating,
+    )
+
 
 
 async def update_user(

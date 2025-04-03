@@ -10,7 +10,7 @@ from src.domain.exchange.service import validate_user_can_edit_setup
 from src.domain.maker.exception import MAKER_ALREADY_EXISTS
 from src.domain.taker.exception import TAKER_ALREADY_EXISTS
 from src.domain.user.exception import USER_NOT_FOUND, USER_UNCONFIRMED, USER_DISABLED
-from src.domain.user.service import get_users_me, update_user
+from src.domain.user.service import get_users_me, update_user, get_user_by_id
 from src.domain.user_address.dto import UserAddressDTO
 from src.domain.user_address.exception import USER_ADDRESS_NOT_FOUND
 from src.domain.user_address.service import create_user_address, get_user_addresses, update_user_address
@@ -40,6 +40,27 @@ async def get_users_endpoint(
         session: get_session_depends,
 ) -> UserResponse:
     return await get_users_me(session, user)
+
+
+@users_router_v1.get(
+    path='/{user_id}',
+    status_code=status.HTTP_200_OK,
+    summary='Пользователь',
+    description=build_description(
+        'Возвращает информацию о пользователе.',
+        {184}
+    ),
+    responses=build_exception_responses(
+        INVALID_CREDENTIALS, REFRESH_NOT_FOUND, REFRESH_EXPIRES, USER_NOT_FOUND, USER_DISABLED, USER_UNCONFIRMED,
+    ),
+    response_model=UserResponse,
+)
+async def get_users_by_id_endpoint(
+        user: user_depends,
+        session: get_session_depends,
+        user_id: UUID = Path(...)
+) -> UserResponse:
+    return await get_user_by_id(session, user_id)
 
 
 @users_router_v1.put(
