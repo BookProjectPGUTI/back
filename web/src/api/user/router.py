@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, status, Body, Path
+from fastapi import APIRouter, status, Body, Path, Query
 
 from src.api.user.dto import UserResponse, UserNameDTO, UserAddressCreateDTO, UserAddressResponse
 from src.database.postgres.depends import get_session_depends
@@ -43,7 +43,7 @@ async def get_users_endpoint(
 
 
 @users_router_v1.get(
-    path='/{user_id}',
+    path='',
     status_code=status.HTTP_200_OK,
     summary='Пользователь',
     description=build_description(
@@ -58,7 +58,7 @@ async def get_users_endpoint(
 async def get_users_by_id_endpoint(
         user: user_depends,
         session: get_session_depends,
-        user_id: UUID = Path(...)
+        user_id: UUID = Query(...)
 ) -> UserResponse:
     return await get_user_by_id(session, user_id)
 
