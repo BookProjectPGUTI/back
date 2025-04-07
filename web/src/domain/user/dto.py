@@ -1,4 +1,5 @@
 import re
+from uuid import UUID
 
 from pydantic import Field
 
@@ -6,6 +7,7 @@ from src.domain.abc.dto import ABCDTO
 
 
 class UserShareDTO(ABCDTO):
+    id: UUID = Field(...)
     first_name: str | None = Field(None, max_length=20, description='Имя пользователя')
     last_name: str | None = Field(None, max_length=50, description='Фамилия пользователя')
     second_name: str | None = Field(None, max_length=25, description='Отчество пользователя')
